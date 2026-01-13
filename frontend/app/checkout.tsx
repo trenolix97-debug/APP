@@ -40,22 +40,34 @@ export default function CheckoutScreen() {
 
   const handlePlaceOrder = async () => {
     if (!selectedOrderType) {
-      Alert.alert('Error', 'Please select an order type');
+      Alert.alert('Eroare', 'Vă rugăm selectați tipul comenzii');
+      return;
+    }
+
+    if (!timeOption) {
+      Alert.alert('Eroare', 'Vă rugăm selectați când doriți comanda');
+      return;
+    }
+
+    if (timeOption === 'custom' && !customTime) {
+      Alert.alert('Eroare', 'Vă rugăm selectați ora exactă');
       return;
     }
 
     if (selectedOrderType === 'delivery' && !deliveryAddress.trim()) {
-      Alert.alert('Error', 'Please enter a delivery address');
+      Alert.alert('Eroare', 'Vă rugăm introduceți adresa de livrare');
       return;
     }
 
     if (!currentRestaurant) {
-      Alert.alert('Error', 'Restaurant information not available');
+      Alert.alert('Eroare', 'Informații restaurant indisponibile');
       return;
     }
 
     try {
       setLoading(true);
+      const pickupTime = timeOption === 'now' ? 'ASAP' : customTime;
+      
       const orderData = {
         restaurantId: currentRestaurant.id,
         restaurantName: currentRestaurant.name,
@@ -63,7 +75,7 @@ export default function CheckoutScreen() {
         orderType: selectedOrderType,
         totalPrice: getTotalPrice(),
         deliveryAddress: selectedOrderType === 'delivery' ? deliveryAddress : undefined,
-        pickupTime: selectedOrderType === 'pickup' ? 'ASAP' : undefined,
+        pickupTime,
       };
 
       await api.createOrder(orderData);
@@ -71,7 +83,7 @@ export default function CheckoutScreen() {
       router.replace('/order-confirmation');
     } catch (error) {
       console.error('Error placing order:', error);
-      Alert.alert('Error', 'Failed to place order. Please try again.');
+      Alert.alert('Eroare', 'Comanda nu a putut fi plasată. Încercați din nou.');
     } finally {
       setLoading(false);
     }
