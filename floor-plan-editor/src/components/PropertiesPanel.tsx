@@ -6,14 +6,19 @@ import { v4 as uuidv4 } from 'uuid';
 const PropertiesPanel: React.FC = () => {
   const {
     selectedElementId,
-    elements,
+    getElements,
     updateElement,
     deleteElement,
     addElement,
-    tableTemplates
+    tableTemplates,
+    scale
   } = useEditorStore();
 
+  const elements = getElements();
   const selectedElement = elements.find(el => el.id === selectedElementId);
+
+  const pxToM = (px: number) => px / scale;
+  const mToPx = (m: number) => m * scale;
 
   if (!selectedElement) {
     return (
@@ -21,32 +26,43 @@ const PropertiesPanel: React.FC = () => {
         <div className="panel-header">Proprietăți</div>
         <div className="panel-section">
           <div className="empty-state">
-            <p style={{ color: '#64748b', fontSize: '14px' }}>
-              Selectează un element pentru a vedea proprietățile
-            </p>
+            <p>Selectează un element pentru a vedea proprietățile</p>
           </div>
         </div>
 
         <div className="panel-section">
           <h4>Comenzi Rapide</h4>
-          <div style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.8 }}>
-            <div><kbd>Delete</kbd> - Șterge element</div>
-            <div><kbd>Ctrl+D</kbd> - Duplică</div>
-            <div><kbd>R</kbd> - Rotește 45°</div>
-            <div><kbd>Scroll</kbd> - Zoom</div>
-            <div><kbd>Space+Drag</kbd> - Pan</div>
+          <div style={{ fontSize: '11px', color: '#666', lineHeight: 1.8 }}>
+            <div><kbd style={{background:'#f0f0f0',padding:'2px 6px',borderRadius:'3px'}}>Delete</kbd> - Șterge</div>
+            <div><kbd style={{background:'#f0f0f0',padding:'2px 6px',borderRadius:'3px'}}>Scroll</kbd> - Zoom</div>
+            <div><kbd style={{background:'#f0f0f0',padding:'2px 6px',borderRadius:'3px'}}>Click dreapta</kbd> - Pan</div>
+            <div><kbd style={{background:'#f0f0f0',padding:'2px 6px',borderRadius:'3px'}}>Esc</kbd> - Anulează</div>
+          </div>
+        </div>
+
+        <div className="panel-section">
+          <h4>Legendă</h4>
+          <div style={{ fontSize: '11px', color: '#666', lineHeight: 2 }}>
+            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+              <div style={{width:'24px',height:'4px',background:'#1a1a1a'}}></div> Perete
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+              <div style={{width:'24px',height:'3px',background:'#666'}}></div> Ușă
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+              <div style={{width:'24px',height:'2px',background:'#999'}}></div> Fereastră
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+              <div style={{width:'16px',height:'16px',border:'1.5px solid #333',borderRadius:'2px'}}></div> Masă
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  const template = selectedElement.tableTemplateId
-    ? tableTemplates.find(t => t.id === selectedElement.tableTemplateId)
-    : null;
-
   const handleDuplicate = () => {
-    addElement({
+    const newElement = {
       ...selectedElement,
       id: uuidv4(),
       x: selectedElement.x + 20,
@@ -54,7 +70,8 @@ const PropertiesPanel: React.FC = () => {
       tableNumber: selectedElement.type === 'table' 
         ? Math.max(...elements.filter(e => e.type === 'table').map(e => e.tableNumber || 0)) + 1 
         : undefined
-    });
+    };
+    addElement(newElement);
   };
 
   const handleRotate = () => {
@@ -63,47 +80,161 @@ const PropertiesPanel: React.FC = () => {
     });
   };
 
+  const getTypeName = () => {
+    switch(selectedElement.type) {
+      case 'wall': return 'Perete';
+      case 'door': return 'Ușă';
+      case 'window': return 'Fereastră';
+      case 'table': return 'Masă';
+      case 'column': return 'Coloană';
+      case 'line': return 'Linie';
+      default: return 'Element';
+    }
+  };
+
   return (
     <div className="properties-panel">
-      <div className="panel-header">
-        {selectedElement.type === 'table' ? 'Masă' : 
-         selectedElement.type === 'wall' ? 'Perete' :
-         selectedElement.type === 'door' ? 'Ușă' :
-         selectedElement.type === 'window' ? 'Fereastră' :
-         selectedElement.type === 'column' ? 'Coloană' :
-         selectedElement.type === 'text' ? 'Text' :
-         'Element'}
-      </div>
+      <div className="panel-header">{getTypeName()}</div>
 
       <div className="panel-section">
         <h4>Acțiuni</h4>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            className="toolbar-btn"
-            onClick={handleDuplicate}
-            style={{ flex: 1 }}
-          >
+        <div className="panel-actions">
+          <button className="panel-btn" onClick={handleDuplicate}>
             <CopyIcon /> Duplică
           </button>
-          <button
-            className="toolbar-btn"
-            onClick={handleRotate}
-            style={{ flex: 1 }}
-          >
+          <button className="panel-btn" onClick={handleRotate}>
             <RotateIcon /> Rotește
           </button>
+          <button className="panel-btn danger" onClick={() => deleteElement(selectedElement.id)}>
+            <TrashIcon /> Șterge
+          </button>
         </div>
-        <button
-          className="toolbar-btn"
-          onClick={() => deleteElement(selectedElement.id)}
-          style={{ width: '100%', marginTop: '8px', color: '#ef4444' }}
-        >
-          <TrashIcon /> Șterge
-        </button>
       </div>
 
+      {/* Dimensions for walls, doors, windows */}
+      {['wall', 'door', 'window', 'line'].includes(selectedElement.type) && (
+        <div className="panel-section">
+          <h4>Dimensiuni</h4>
+          <div className="property-row">
+            <label>Lungime</label>
+            <input
+              type="number"
+              step="0.01"
+              value={selectedElement.widthM?.toFixed(2) || '0'}
+              onChange={(e) => {
+                const newLengthM = Number(e.target.value);
+                if (selectedElement.x2 !== undefined && selectedElement.y2 !== undefined) {
+                  const dx = selectedElement.x2 - selectedElement.x;
+                  const dy = selectedElement.y2 - selectedElement.y;
+                  const currentLength = Math.sqrt(dx*dx + dy*dy);
+                  const ratio = mToPx(newLengthM) / currentLength;
+                  updateElement(selectedElement.id, {
+                    widthM: newLengthM,
+                    x2: selectedElement.x + dx * ratio,
+                    y2: selectedElement.y + dy * ratio
+                  });
+                }
+              }}
+            />
+            <span className="unit">m</span>
+          </div>
+        </div>
+      )}
+
+      {/* Table properties */}
+      {selectedElement.type === 'table' && (
+        <>
+          <div className="panel-section">
+            <h4>Dimensiuni</h4>
+            <div className="property-row">
+              <label>Lățime</label>
+              <input
+                type="number"
+                step="0.1"
+                value={selectedElement.widthM?.toFixed(1) || '0.9'}
+                onChange={(e) => updateElement(selectedElement.id, { widthM: Number(e.target.value) })}
+              />
+              <span className="unit">m</span>
+            </div>
+            {selectedElement.shape !== 'round' && (
+              <div className="property-row">
+                <label>Adâncime</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={selectedElement.heightM?.toFixed(1) || '0.9'}
+                  onChange={(e) => updateElement(selectedElement.id, { heightM: Number(e.target.value) })}
+                />
+                <span className="unit">m</span>
+              </div>
+            )}
+          </div>
+
+          <div className="panel-section">
+            <h4>Detalii Masă</h4>
+            <div className="property-row">
+              <label>Număr</label>
+              <input
+                type="number"
+                min="1"
+                value={selectedElement.tableNumber || 1}
+                onChange={(e) => updateElement(selectedElement.id, { tableNumber: Number(e.target.value) })}
+              />
+            </div>
+            <div className="property-row">
+              <label>Capacitate</label>
+              <input
+                type="number"
+                min="1"
+                max="20"
+                value={selectedElement.capacity || 4}
+                onChange={(e) => updateElement(selectedElement.id, { capacity: Number(e.target.value) })}
+              />
+              <span className="unit">pers</span>
+            </div>
+            <div className="property-row">
+              <label>Rotație</label>
+              <input
+                type="number"
+                step="15"
+                value={selectedElement.rotation || 0}
+                onChange={(e) => updateElement(selectedElement.id, { rotation: Number(e.target.value) % 360 })}
+              />
+              <span className="unit">°</span>
+            </div>
+            <div className="checkbox-row" style={{marginTop: '12px'}}>
+              <input
+                type="checkbox"
+                id="canCombine"
+                checked={selectedElement.canCombine || false}
+                onChange={(e) => updateElement(selectedElement.id, { canCombine: e.target.checked })}
+              />
+              <label htmlFor="canCombine">Poate fi combinată cu alte mese</label>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Column properties */}
+      {selectedElement.type === 'column' && (
+        <div className="panel-section">
+          <h4>Dimensiuni</h4>
+          <div className="property-row">
+            <label>Diametru</label>
+            <input
+              type="number"
+              step="0.05"
+              value={selectedElement.widthM?.toFixed(2) || '0.3'}
+              onChange={(e) => updateElement(selectedElement.id, { widthM: Number(e.target.value), heightM: Number(e.target.value) })}
+            />
+            <span className="unit">m</span>
+          </div>
+        </div>
+      )}
+
+      {/* Position */}
       <div className="panel-section">
-        <h4>Poziție</h4>
+        <h4>Poziție (pixeli)</h4>
         <div className="property-row">
           <label>X</label>
           <input
@@ -120,87 +251,7 @@ const PropertiesPanel: React.FC = () => {
             onChange={(e) => updateElement(selectedElement.id, { y: Number(e.target.value) })}
           />
         </div>
-        <div className="property-row">
-          <label>Rotație</label>
-          <input
-            type="number"
-            value={selectedElement.rotation}
-            onChange={(e) => updateElement(selectedElement.id, { rotation: Number(e.target.value) })}
-          />
-        </div>
       </div>
-
-      {selectedElement.width !== undefined && (
-        <div className="panel-section">
-          <h4>Dimensiuni</h4>
-          <div className="property-row">
-            <label>Lățime</label>
-            <input
-              type="number"
-              value={Math.round(selectedElement.width || 0)}
-              onChange={(e) => updateElement(selectedElement.id, { width: Number(e.target.value) })}
-            />
-          </div>
-          <div className="property-row">
-            <label>Înălțime</label>
-            <input
-              type="number"
-              value={Math.round(selectedElement.height || 0)}
-              onChange={(e) => updateElement(selectedElement.id, { height: Number(e.target.value) })}
-            />
-          </div>
-        </div>
-      )}
-
-      {selectedElement.type === 'table' && (
-        <div className="panel-section">
-          <h4>Detalii Masă</h4>
-          <div className="property-row">
-            <label>Număr</label>
-            <input
-              type="number"
-              value={selectedElement.tableNumber || 1}
-              onChange={(e) => updateElement(selectedElement.id, { tableNumber: Number(e.target.value) })}
-            />
-          </div>
-          <div className="property-row">
-            <label>Capacitate</label>
-            <input
-              type="number"
-              value={selectedElement.capacity || 4}
-              onChange={(e) => updateElement(selectedElement.id, { capacity: Number(e.target.value) })}
-            />
-          </div>
-          {template && (
-            <div style={{ marginTop: '12px', padding: '12px', background: '#f1f5f9', borderRadius: '8px' }}>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>Template: {template.name}</div>
-              <div style={{ fontSize: '14px', fontWeight: 500 }}>{template.capacity} persoane</div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {selectedElement.type === 'text' && (
-        <div className="panel-section">
-          <h4>Text</h4>
-          <div className="property-row">
-            <label>Conținut</label>
-            <input
-              type="text"
-              value={selectedElement.text || ''}
-              onChange={(e) => updateElement(selectedElement.id, { text: e.target.value })}
-            />
-          </div>
-          <div className="property-row">
-            <label>Mărime</label>
-            <input
-              type="number"
-              value={selectedElement.fontSize || 16}
-              onChange={(e) => updateElement(selectedElement.id, { fontSize: Number(e.target.value) })}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 };

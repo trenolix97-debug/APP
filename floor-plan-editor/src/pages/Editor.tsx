@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Toolbar from '../components/Toolbar';
 import Canvas from '../components/Canvas';
@@ -8,10 +7,9 @@ import { useEditorStore } from '../store/editorStore';
 import { TableTemplate, Project } from '../types';
 
 const Editor: React.FC = () => {
-  const navigate = useNavigate();
   const [draggedTemplate, setDraggedTemplate] = useState<TableTemplate | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const { exportProject, loadProject, tableTemplates } = useEditorStore();
+  const { exportProject, loadProject } = useEditorStore();
 
   const showToast = (message: string) => {
     setToast(message);
@@ -21,7 +19,7 @@ const Editor: React.FC = () => {
   const handleSave = () => {
     const project = exportProject();
     localStorage.setItem('floorplan-project', JSON.stringify(project));
-    showToast('✅ Proiect salvat cu succes!');
+    showToast('✅ Proiect salvat!');
   };
 
   const handleLoad = () => {
@@ -32,10 +30,10 @@ const Editor: React.FC = () => {
         loadProject(project);
         showToast('✅ Proiect încărcat!');
       } catch (e) {
-        showToast('❌ Eroare la încărcarea proiectului');
+        showToast('❌ Eroare la încărcare');
       }
     } else {
-      showToast('⚠️ Nu există niciun proiect salvat');
+      showToast('⚠️ Nu există proiect salvat');
     }
   };
 
@@ -51,13 +49,6 @@ const Editor: React.FC = () => {
     URL.revokeObjectURL(url);
     showToast('✅ JSON exportat!');
   };
-
-  // Check if user has table templates
-  React.useEffect(() => {
-    if (tableTemplates.length === 0) {
-      // Don't force redirect, templates are pre-populated now
-    }
-  }, [tableTemplates, navigate]);
 
   return (
     <div className="app-container">

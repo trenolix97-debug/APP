@@ -3,187 +3,230 @@ import { useNavigate } from 'react-router-dom';
 import { useEditorStore } from '../store/editorStore';
 import { TableShape } from '../types';
 import { v4 as uuidv4 } from 'uuid';
-
-const COLORS = [
-  '#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', 
-  '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
-];
+import { TrashIcon, EditIcon } from '../components/Icons';
 
 const TableDesigner: React.FC = () => {
   const navigate = useNavigate();
-  const { addTableTemplate, tableTemplates, deleteTableTemplate } = useEditorStore();
+  const { addTableTemplate, tableTemplates, deleteTableTemplate, updateTableTemplate } = useEditorStore();
   
   const [name, setName] = useState('');
   const [shape, setShape] = useState<TableShape>('square');
   const [capacity, setCapacity] = useState(4);
-  const [width, setWidth] = useState(80);
-  const [height, setHeight] = useState(80);
-  const [color, setColor] = useState(COLORS[0]);
+  const [widthM, setWidthM] = useState(0.9);
+  const [heightM, setHeightM] = useState(0.9);
+  const [canCombine, setCanCombine] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const resetForm = () => {
+    setName('');
+    setShape('square');
+    setCapacity(4);
+    setWidthM(0.9);
+    setHeightM(0.9);
+    setCanCombine(true);
+    setEditingId(null);
+  };
+
+  const handleEdit = (template: typeof tableTemplates[0]) => {
+    setName(template.name);
+    setShape(template.shape);
+    setCapacity(template.capacity);
+    setWidthM(template.widthM);
+    setHeightM(template.heightM);
+    setCanCombine(template.canCombine);
+    setEditingId(template.id);
+    setShowForm(true);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!name.trim()) {
-      alert('Te rog introdu un nume pentru masă!');
+      alert('Introdu un nume pentru masă!');
       return;
     }
 
-    addTableTemplate({
-      id: uuidv4(),
+    const templateData = {
       name: name.trim(),
       shape,
       capacity,
-      width: shape === 'round' ? Math.max(width, height) : width,
-      height: shape === 'round' ? Math.max(width, height) : height,
-      color
-    });
+      widthM: shape === 'round' ? Math.max(widthM, heightM) : widthM,
+      heightM: shape === 'round' ? Math.max(widthM, heightM) : heightM,
+      canCombine
+    };
 
-    // Reset form
-    setName('');
-    setCapacity(4);
-    setWidth(80);
-    setHeight(80);
+    if (editingId) {
+      updateTableTemplate(editingId, templateData);
+    } else {
+      addTableTemplate({
+        id: uuidv4(),
+        ...templateData
+      });
+    }
+
+    resetForm();
     setShowForm(false);
   };
 
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+      background: '#f8f9fa',
       padding: '40px'
     }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
         {/* Header */}
         <div style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
-          marginBottom: '40px'
+          marginBottom: '32px'
         }}>
           <div>
-            <h1 style={{ 
-              color: 'white', 
-              fontSize: '32px', 
-              fontWeight: 700,
-              marginBottom: '8px'
-            }}>
-              🪑 Designer Mese
+            <h1 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '4px' }}>
+              Designer Mese
             </h1>
-            <p style={{ color: '#94a3b8' }}>
-              Creează template-uri de mese pentru floor plan-ul tău
+            <p style={{ color: '#666', fontSize: '14px' }}>
+              Creează și gestionează template-uri de mese
             </p>
           </div>
           
           <button
             className="btn btn-secondary"
             onClick={() => navigate('/')}
-            style={{ background: 'white' }}
           >
             ← Înapoi la Editor
           </button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: '32px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: showForm ? '1fr 360px' : '1fr', gap: '24px' }}>
           {/* Existing Templates */}
           <div>
             <div style={{ 
               display: 'flex', 
               justifyContent: 'space-between', 
               alignItems: 'center',
-              marginBottom: '20px'
+              marginBottom: '16px'
             }}>
-              <h2 style={{ color: 'white', fontSize: '20px' }}>
-                Template-uri Existente ({tableTemplates.length})
+              <h2 style={{ fontSize: '16px', fontWeight: 500 }}>
+                Template-uri ({tableTemplates.length})
               </h2>
               
               {!showForm && (
                 <button
                   className="btn btn-primary"
-                  onClick={() => setShowForm(true)}
+                  onClick={() => { resetForm(); setShowForm(true); }}
                 >
-                  + Adaugă Template Nou
+                  + Adaugă Template
                 </button>
               )}
             </div>
 
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-              gap: '16px'
-            }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px' }}>
               {tableTemplates.map((template) => (
                 <div
                   key={template.id}
                   style={{
                     background: 'white',
-                    borderRadius: '16px',
-                    padding: '24px',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '8px',
+                    padding: '16px',
                     textAlign: 'center'
                   }}
                 >
                   <div
                     style={{
-                      width: '80px',
-                      height: '80px',
-                      background: template.color,
-                      borderRadius: template.shape === 'round' ? '50%' : '8px',
-                      margin: '0 auto 16px',
+                      width: template.shape === 'rectangle' || template.shape === 'oval' ? '60px' : '48px',
+                      height: template.shape === 'rectangle' || template.shape === 'oval' ? '36px' : '48px',
+                      border: '1.5px solid #333',
+                      borderRadius: template.shape === 'round' ? '50%' : template.shape === 'oval' ? '50%' : '4px',
+                      margin: '0 auto 12px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: 'white',
-                      fontSize: '24px',
-                      fontWeight: 700,
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      background: 'white'
                     }}
                   >
                     {template.capacity}
                   </div>
                   
-                  <h3 style={{ fontSize: '16px', marginBottom: '4px' }}>
+                  <h3 style={{ fontSize: '13px', fontWeight: 500, marginBottom: '4px' }}>
                     {template.name}
                   </h3>
                   
-                  <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '12px' }}>
-                    {template.capacity} persoane • {template.shape}
+                  <p style={{ color: '#888', fontSize: '11px', marginBottom: '8px' }}>
+                    {template.widthM}m x {template.heightM}m
                   </p>
                   
-                  <p style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '16px' }}>
-                    {template.width} x {template.height} px
-                  </p>
+                  {template.canCombine && (
+                    <span style={{ 
+                      fontSize: '10px', 
+                      background: '#e8f5e9', 
+                      color: '#2e7d32',
+                      padding: '2px 8px',
+                      borderRadius: '10px'
+                    }}>
+                      Combinabilă
+                    </span>
+                  )}
 
-                  <button
-                    className="btn btn-danger"
-                    onClick={() => {
-                      if (confirm(`Ștergi template-ul "${template.name}"?`)) {
-                        deleteTableTemplate(template.id);
-                      }
-                    }}
-                    style={{ fontSize: '12px', padding: '8px 16px' }}
-                  >
-                    Șterge
-                  </button>
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '12px', justifyContent: 'center' }}>
+                    <button
+                      onClick={() => handleEdit(template)}
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: '11px',
+                        background: '#f5f5f5',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <EditIcon /> Editează
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm(`Ștergi "${template.name}"?`)) {
+                          deleteTableTemplate(template.id);
+                        }
+                      }}
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: '11px',
+                        background: '#fff5f5',
+                        border: '1px solid #ffcdd2',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        color: '#c62828'
+                      }}
+                    >
+                      <TrashIcon />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Create Form */}
+          {/* Create/Edit Form */}
           {showForm && (
             <div style={{
               background: 'white',
-              borderRadius: '16px',
-              padding: '32px',
+              border: '1px solid #e0e0e0',
+              borderRadius: '8px',
+              padding: '24px',
               height: 'fit-content'
             }}>
-              <h2 style={{ fontSize: '20px', marginBottom: '24px' }}>
-                Creează Template Nou
+              <h2 style={{ fontSize: '16px', fontWeight: 500, marginBottom: '20px' }}>
+                {editingId ? 'Editează Template' : 'Template Nou'}
               </h2>
 
               <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                  <label>Nume Template</label>
+                  <label>Nume</label>
                   <input
                     type="text"
                     value={name}
@@ -195,23 +238,15 @@ const TableDesigner: React.FC = () => {
                 <div className="form-group">
                   <label>Formă</label>
                   <div className="shape-selector">
-                    {(['square', 'round', 'rectangle'] as TableShape[]).map((s) => (
+                    {(['square', 'round', 'rectangle', 'oval'] as TableShape[]).map((s) => (
                       <div
                         key={s}
                         className={`shape-option ${shape === s ? 'selected' : ''}`}
                         onClick={() => setShape(s)}
                       >
-                        <div
-                          style={{
-                            width: '48px',
-                            height: s === 'rectangle' ? '32px' : '48px',
-                            background: color,
-                            borderRadius: s === 'round' ? '50%' : '4px',
-                            margin: '0 auto 8px'
-                          }}
-                        />
-                        <span style={{ fontSize: '12px' }}>
-                          {s === 'square' ? 'Pătrat' : s === 'round' ? 'Rotund' : 'Dreptunghi'}
+                        <div className={`shape-preview ${s}`} />
+                        <span>
+                          {s === 'square' ? 'Pătrat' : s === 'round' ? 'Rotund' : s === 'rectangle' ? 'Drept.' : 'Oval'}
                         </span>
                       </div>
                     ))}
@@ -229,86 +264,81 @@ const TableDesigner: React.FC = () => {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="form-row">
                   <div className="form-group">
-                    <label>Lățime (px)</label>
+                    <label>{shape === 'round' ? 'Diametru (m)' : 'Lățime (m)'}</label>
                     <input
                       type="number"
-                      min="40"
-                      max="300"
-                      value={width}
-                      onChange={(e) => setWidth(Number(e.target.value))}
+                      step="0.1"
+                      min="0.3"
+                      max="5"
+                      value={widthM}
+                      onChange={(e) => setWidthM(Number(e.target.value))}
                     />
                   </div>
                   
-                  <div className="form-group">
-                    <label>Înălțime (px)</label>
-                    <input
-                      type="number"
-                      min="40"
-                      max="300"
-                      value={height}
-                      onChange={(e) => setHeight(Number(e.target.value))}
-                      disabled={shape === 'round'}
-                    />
-                  </div>
+                  {shape !== 'round' && (
+                    <div className="form-group">
+                      <label>Adâncime (m)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0.3"
+                        max="5"
+                        value={heightM}
+                        onChange={(e) => setHeightM(Number(e.target.value))}
+                      />
+                    </div>
+                  )}
                 </div>
 
-                <div className="form-group">
-                  <label>Culoare</label>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {COLORS.map((c) => (
-                      <div
-                        key={c}
-                        onClick={() => setColor(c)}
-                        style={{
-                          width: '32px',
-                          height: '32px',
-                          background: c,
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          border: color === c ? '3px solid #1e293b' : '3px solid transparent',
-                          transition: 'all 0.2s'
-                        }}
-                      />
-                    ))}
-                  </div>
+                <div className="checkbox-row" style={{ marginBottom: '20px' }}>
+                  <input
+                    type="checkbox"
+                    id="canCombine"
+                    checked={canCombine}
+                    onChange={(e) => setCanCombine(e.target.checked)}
+                  />
+                  <label htmlFor="canCombine">Poate fi combinată cu alte mese</label>
                 </div>
 
                 {/* Preview */}
                 <div style={{
-                  background: '#f8fafc',
-                  borderRadius: '12px',
-                  padding: '24px',
+                  background: '#fafafa',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '8px',
+                  padding: '20px',
                   textAlign: 'center',
-                  marginBottom: '24px'
+                  marginBottom: '20px'
                 }}>
-                  <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>Preview</p>
+                  <p style={{ fontSize: '11px', color: '#888', marginBottom: '12px' }}>Preview</p>
                   <div
                     style={{
-                      width: `${Math.min(width, 100)}px`,
-                      height: `${Math.min(shape === 'round' ? width : height, 100)}px`,
-                      background: color,
-                      borderRadius: shape === 'round' ? '50%' : '8px',
+                      width: shape === 'rectangle' || shape === 'oval' ? '70px' : '50px',
+                      height: shape === 'rectangle' || shape === 'oval' ? '40px' : '50px',
+                      border: '1.5px solid #333',
+                      borderRadius: shape === 'round' || shape === 'oval' ? '50%' : '4px',
                       margin: '0 auto',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: 'white',
-                      fontSize: '20px',
-                      fontWeight: 700,
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                      fontSize: '16px',
+                      fontWeight: 600,
+                      background: 'white'
                     }}
                   >
                     {capacity}
                   </div>
+                  <p style={{ fontSize: '11px', color: '#666', marginTop: '8px' }}>
+                    {widthM}m x {shape === 'round' ? widthM : heightM}m
+                  </p>
                 </div>
 
                 <div className="modal-actions" style={{ justifyContent: 'stretch' }}>
                   <button
                     type="button"
                     className="btn btn-secondary"
-                    onClick={() => setShowForm(false)}
+                    onClick={() => { setShowForm(false); resetForm(); }}
                     style={{ flex: 1 }}
                   >
                     Anulează
@@ -318,7 +348,7 @@ const TableDesigner: React.FC = () => {
                     className="btn btn-primary"
                     style={{ flex: 1 }}
                   >
-                    Salvează Template
+                    {editingId ? 'Salvează' : 'Creează'}
                   </button>
                 </div>
               </form>
