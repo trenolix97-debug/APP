@@ -8,5 +8,14 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "konva": "^10.0.12",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-konva": "^19.2.1",
+    "react-router-dom": "^7.12.0",
+    "uuid": "^13.0.0",
+    "zustand": "^5.0.10"
+  }
 }
