@@ -45,6 +45,17 @@ export default function HomeScreen() {
     }
   };
 
+  const SkeletonCard = () => (
+    <View style={styles.skeletonCard}>
+      <View style={styles.skeletonImage} />
+      <View style={styles.skeletonContent}>
+        <View style={styles.skeletonTitle} />
+        <View style={styles.skeletonLine} />
+        <View style={styles.skeletonLineSmall} />
+      </View>
+    </View>
+  );
+
   const renderRestaurant = ({ item }: { item: Restaurant }) => (
     <TouchableOpacity
       style={styles.card}
