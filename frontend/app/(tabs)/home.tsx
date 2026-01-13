@@ -215,6 +215,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
+  cardImage: {
+    height: 160,
+    width: '100%',
+  },
   cardImagePlaceholder: {
     height: 160,
     backgroundColor: '#F5F5F5',
