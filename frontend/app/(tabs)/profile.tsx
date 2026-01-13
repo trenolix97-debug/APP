@@ -1,8 +1,23 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function ProfileScreen() {
+  const { t, language, setLanguage } = useLanguage();
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
+
+  const languages = [
+    { code: 'en', name: t.languages.en, flag: '🇬🇧' },
+    { code: 'ro', name: t.languages.ro, flag: '🇷🇴' },
+    { code: 'ru', name: t.languages.ru, flag: '🇷🇺' },
+  ] as const;
+
+  const handleLanguageSelect = async (lang: 'en' | 'ro' | 'ru') => {
+    await setLanguage(lang);
+    setShowLanguageModal(false);
+  };
+
   return (
     <ScrollView style={styles.container}>
       {/* User Info */}
@@ -18,19 +33,19 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <TouchableOpacity style={styles.menuItem}>
           <Ionicons name="heart-outline" size={24} color="#000" />
-          <Text style={styles.menuText}>Saved Restaurants</Text>
+          <Text style={styles.menuText}>{t.profile.savedRestaurants}</Text>
           <Ionicons name="chevron-forward" size={24} color="#999" />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuItem}>
           <Ionicons name="card-outline" size={24} color="#000" />
-          <Text style={styles.menuText}>Payment Methods</Text>
+          <Text style={styles.menuText}>{t.profile.paymentMethods}</Text>
           <Ionicons name="chevron-forward" size={24} color="#999" />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuItem}>
           <Ionicons name="location-outline" size={24} color="#000" />
-          <Text style={styles.menuText}>Saved Addresses</Text>
+          <Text style={styles.menuText}>{t.profile.savedAddresses}</Text>
           <Ionicons name="chevron-forward" size={24} color="#999" />
         </TouchableOpacity>
       </View>
@@ -38,20 +53,25 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <TouchableOpacity style={styles.menuItem}>
           <Ionicons name="notifications-outline" size={24} color="#000" />
-          <Text style={styles.menuText}>Notifications</Text>
+          <Text style={styles.menuText}>{t.profile.notifications}</Text>
           <Ionicons name="chevron-forward" size={24} color="#999" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={() => setShowLanguageModal(true)}
+        >
           <Ionicons name="language-outline" size={24} color="#000" />
-          <Text style={styles.menuText}>Language</Text>
-          <Text style={styles.menuValue}>English</Text>
+          <Text style={styles.menuText}>{t.profile.language}</Text>
+          <Text style={styles.menuValue}>
+            {languages.find(l => l.code === language)?.name}
+          </Text>
           <Ionicons name="chevron-forward" size={24} color="#999" />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuItem}>
           <Ionicons name="help-circle-outline" size={24} color="#000" />
-          <Text style={styles.menuText}>Help & Support</Text>
+          <Text style={styles.menuText}>{t.profile.helpSupport}</Text>
           <Ionicons name="chevron-forward" size={24} color="#999" />
         </TouchableOpacity>
       </View>
@@ -59,11 +79,47 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <TouchableOpacity style={styles.menuItem}>
           <Ionicons name="log-out-outline" size={24} color="#FF0000" />
-          <Text style={[styles.menuText, { color: '#FF0000' }]}>Log Out</Text>
+          <Text style={[styles.menuText, { color: '#FF0000' }]}>{t.profile.logout}</Text>
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.version}>Version 1.0.0</Text>
+      <Text style={styles.version}>{t.profile.version} 1.0.0</Text>
+
+      {/* Language Selection Modal */}
+      <Modal
+        visible={showLanguageModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowLanguageModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t.profile.language}</Text>
+              <TouchableOpacity onPress={() => setShowLanguageModal(false)}>
+                <Ionicons name="close" size={28} color="#000" />
+              </TouchableOpacity>
+            </View>
+            
+            {languages.map((lang) => (
+              <TouchableOpacity
+                key={lang.code}
+                style={[
+                  styles.languageOption,
+                  language === lang.code && styles.languageOptionActive
+                ]}
+                onPress={() => handleLanguageSelect(lang.code)}
+              >
+                <Text style={styles.languageFlag}>{lang.flag}</Text>
+                <Text style={styles.languageName}>{lang.name}</Text>
+                {language === lang.code && (
+                  <Ionicons name="checkmark-circle" size={24} color="#FFC107" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -126,5 +182,48 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     paddingVertical: 24,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  languageOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  languageOptionActive: {
+    backgroundColor: '#FFF9E6',
+  },
+  languageFlag: {
+    fontSize: 28,
+    marginRight: 16,
+  },
+  languageName: {
+    flex: 1,
+    fontSize: 18,
+    color: '#000',
   },
 });
