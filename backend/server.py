@@ -310,11 +310,11 @@ DEMO_RESTAURANTS = [
 ]
 
 async def seed_restaurants():
-    """Seed database with demo restaurants if empty"""
-    count = await db.restaurants.count_documents({})
-    if count == 0:
-        await db.restaurants.insert_many(DEMO_RESTAURANTS)
-        logging.info(f"Seeded {len(DEMO_RESTAURANTS)} demo restaurants")
+    """Seed database with demo restaurants - force reseed to update images"""
+    # Clear existing restaurants to reseed with images
+    await db.restaurants.delete_many({})
+    await db.restaurants.insert_many(DEMO_RESTAURANTS)
+    logging.info(f"Reseeded {len(DEMO_RESTAURANTS)} demo restaurants with images")
 
 @app.on_event("startup")
 async def startup_event():
