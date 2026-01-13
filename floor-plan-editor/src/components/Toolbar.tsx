@@ -6,7 +6,6 @@ import {
   GridIcon,
   SaveIcon,
   ExportIcon,
-  UndoIcon,
   TrashIcon,
   MagnetIcon,
   LoadIcon
@@ -26,11 +25,15 @@ const Toolbar: React.FC<ToolbarProps> = ({ onSave, onLoad, onExport }) => {
     toggleGrid,
     snapToGrid,
     toggleSnapToGrid,
+    snapToCorners,
+    toggleSnapToCorners,
     selectedElementId,
     deleteElement,
     clearCanvas,
     projectName,
-    setProjectName
+    setProjectName,
+    scale,
+    setScale
   } = useEditorStore();
 
   const handleDelete = () => {
@@ -46,26 +49,34 @@ const Toolbar: React.FC<ToolbarProps> = ({ onSave, onLoad, onExport }) => {
           type="text"
           value={projectName}
           onChange={(e) => setProjectName(e.target.value)}
-          style={{
-            border: 'none',
-            background: 'transparent',
-            fontSize: '16px',
-            fontWeight: 600,
-            width: '200px'
-          }}
+          className="project-name-input"
+          placeholder="Nume proiect"
         />
         
-        <button className="toolbar-btn" onClick={onSave}>
+        <button className="toolbar-btn" onClick={onSave} title="Salvează (localStorage)">
           <SaveIcon /> Salvează
         </button>
         
-        <button className="toolbar-btn" onClick={onLoad}>
+        <button className="toolbar-btn" onClick={onLoad} title="Încarcă din localStorage">
           <LoadIcon /> Încarcă
         </button>
         
-        <button className="toolbar-btn primary" onClick={onExport}>
-          <ExportIcon /> Export JSON
+        <button className="toolbar-btn primary" onClick={onExport} title="Export JSON">
+          <ExportIcon /> Export
         </button>
+
+        <div style={{ marginLeft: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <label style={{ fontSize: '11px', color: '#666' }}>Scară:</label>
+          <select 
+            value={scale} 
+            onChange={(e) => setScale(Number(e.target.value))}
+            style={{ padding: '4px 8px', fontSize: '11px', border: '1px solid #e0e0e0', borderRadius: '4px' }}
+          >
+            <option value={25}>25px/m</option>
+            <option value={50}>50px/m</option>
+            <option value={100}>100px/m</option>
+          </select>
+        </div>
       </div>
 
       <div className="toolbar-center">
@@ -73,6 +84,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ onSave, onLoad, onExport }) => {
           <button
             className="zoom-btn"
             onClick={() => setZoom(zoom - 0.1)}
+            title="Zoom out"
           >
             <ZoomOutIcon />
           </button>
@@ -80,6 +92,7 @@ const Toolbar: React.FC<ToolbarProps> = ({ onSave, onLoad, onExport }) => {
           <button
             className="zoom-btn"
             onClick={() => setZoom(zoom + 0.1)}
+            title="Zoom in"
           >
             <ZoomInIcon />
           </button>
@@ -98,9 +111,17 @@ const Toolbar: React.FC<ToolbarProps> = ({ onSave, onLoad, onExport }) => {
         <button
           className={`toolbar-btn ${snapToGrid ? 'active' : ''}`}
           onClick={toggleSnapToGrid}
-          title="Snap to Grid"
+          title="Snap la grid"
         >
-          <MagnetIcon /> Snap
+          Snap
+        </button>
+
+        <button
+          className={`toolbar-btn ${snapToCorners ? 'active' : ''}`}
+          onClick={toggleSnapToCorners}
+          title="Magnet la colțuri"
+        >
+          <MagnetIcon /> Magnet
         </button>
 
         <button
@@ -108,21 +129,21 @@ const Toolbar: React.FC<ToolbarProps> = ({ onSave, onLoad, onExport }) => {
           onClick={handleDelete}
           disabled={!selectedElementId}
           style={{ opacity: selectedElementId ? 1 : 0.5 }}
-          title="Șterge elementul selectat (Delete)"
+          title="Șterge (Delete)"
         >
-          <TrashIcon /> Șterge
+          <TrashIcon />
         </button>
 
         <button
           className="toolbar-btn"
           onClick={() => {
-            if (confirm('Ești sigur că vrei să ștergi tot?')) {
+            if (confirm('Curăță tot canvas-ul pentru acest plan?')) {
               clearCanvas();
             }
           }}
-          title="Curăță tot canvas-ul"
+          title="Curăță canvas"
         >
-          <UndoIcon /> Reset
+          Reset
         </button>
       </div>
     </div>
