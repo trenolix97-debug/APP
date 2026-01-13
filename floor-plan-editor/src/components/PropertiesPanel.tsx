@@ -1,7 +1,6 @@
 import React from 'react';
 import { useEditorStore } from '../store/editorStore';
-import { TrashIcon, CopyIcon, RotateIcon } from './Icons';
-import { v4 as uuidv4 } from 'uuid';
+import { TrashIcon, CopyIcon, RotateIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from './Icons';
 
 const PropertiesPanel: React.FC = () => {
   const {
@@ -9,13 +8,15 @@ const PropertiesPanel: React.FC = () => {
     getElements,
     updateElement,
     deleteElement,
-    addElement,
+    duplicateElement,
+    alignElements,
     tableTemplates,
     scale
   } = useEditorStore();
 
   const elements = getElements();
   const selectedElement = elements.find(el => el.id === selectedElementId);
+  const tables = elements.filter(el => el.type === 'table');
 
   const pxToM = (px: number) => px / scale;
   const mToPx = (m: number) => m * scale;
@@ -30,55 +31,62 @@ const PropertiesPanel: React.FC = () => {
           </div>
         </div>
 
-        <div className="panel-section">
-          <h4>Comenzi Rapide</h4>
-          <div style={{ fontSize: '11px', color: '#666', lineHeight: 1.8 }}>
-            <div><kbd style={{background:'#f0f0f0',padding:'2px 6px',borderRadius:'3px'}}>Delete</kbd> - Șterge</div>
-            <div><kbd style={{background:'#f0f0f0',padding:'2px 6px',borderRadius:'3px'}}>Scroll</kbd> - Zoom</div>
-            <div><kbd style={{background:'#f0f0f0',padding:'2px 6px',borderRadius:'3px'}}>Click dreapta</kbd> - Pan</div>
-            <div><kbd style={{background:'#f0f0f0',padding:'2px 6px',borderRadius:'3px'}}>Esc</kbd> - Anulează</div>
+        {tables.length >= 2 && (
+          <div className="panel-section">
+            <h4>Aliniere Mese ({tables.length})</h4>
+            <div className="align-buttons">
+              <button onClick={() => alignElements('left')} title="Aliniere stânga">
+                <AlignLeftIcon />
+              </button>
+              <button onClick={() => alignElements('center')} title="Aliniere centru">
+                <AlignCenterIcon />
+              </button>
+              <button onClick={() => alignElements('right')} title="Aliniere dreapta">
+                <AlignRightIcon />
+              </button>
+            </div>
+            <div className="align-buttons" style={{marginTop: '6px'}}>
+              <button onClick={() => alignElements('top')} title="Aliniere sus">
+                <span style={{transform: 'rotate(-90deg)', display: 'inline-block'}}><AlignLeftIcon /></span>
+              </button>
+              <button onClick={() => alignElements('middle')} title="Aliniere mijloc">
+                <span style={{transform: 'rotate(-90deg)', display: 'inline-block'}}><AlignCenterIcon /></span>
+              </button>
+              <button onClick={() => alignElements('bottom')} title="Aliniere jos">
+                <span style={{transform: 'rotate(-90deg)', display: 'inline-block'}}><AlignRightIcon /></span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="panel-section">
           <h4>Legendă</h4>
-          <div style={{ fontSize: '11px', color: '#666', lineHeight: 2 }}>
-            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-              <div style={{width:'24px',height:'4px',background:'#1a1a1a'}}></div> Perete
+          <div className="legend-list">
+            <div className="legend-item">
+              <div className="legend-line wall"></div>
+              <span>Perete</span>
             </div>
-            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-              <div style={{width:'24px',height:'3px',background:'#666'}}></div> Ușă
+            <div className="legend-item">
+              <div className="legend-line door"></div>
+              <span>Ușă</span>
             </div>
-            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-              <div style={{width:'24px',height:'2px',background:'#999'}}></div> Fereastră
+            <div className="legend-item">
+              <div className="legend-line window"></div>
+              <span>Fereastră</span>
             </div>
-            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-              <div style={{width:'16px',height:'16px',border:'1.5px solid #333',borderRadius:'2px'}}></div> Masă
+            <div className="legend-item">
+              <div className="legend-box"></div>
+              <span>Masă</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-circle"></div>
+              <span>Coloană</span>
             </div>
           </div>
         </div>
       </div>
     );
   }
-
-  const handleDuplicate = () => {
-    const newElement = {
-      ...selectedElement,
-      id: uuidv4(),
-      x: selectedElement.x + 20,
-      y: selectedElement.y + 20,
-      tableNumber: selectedElement.type === 'table' 
-        ? Math.max(...elements.filter(e => e.type === 'table').map(e => e.tableNumber || 0)) + 1 
-        : undefined
-    };
-    addElement(newElement);
-  };
-
-  const handleRotate = () => {
-    updateElement(selectedElement.id, {
-      rotation: (selectedElement.rotation + 45) % 360
-    });
-  };
 
   const getTypeName = () => {
     switch(selectedElement.type) {
@@ -94,18 +102,25 @@ const PropertiesPanel: React.FC = () => {
 
   return (
     <div className="properties-panel">
-      <div className="panel-header">{getTypeName()}</div>
+      <div className="panel-header">
+        <span>{getTypeName()}</span>
+        <span className="panel-header-id">#{selectedElement.id.slice(0, 6)}</span>
+      </div>
 
       <div className="panel-section">
         <h4>Acțiuni</h4>
         <div className="panel-actions">
-          <button className="panel-btn" onClick={handleDuplicate}>
+          <button className="panel-btn" onClick={() => duplicateElement(selectedElement.id)} title="Ctrl+D">
             <CopyIcon /> Duplică
           </button>
-          <button className="panel-btn" onClick={handleRotate}>
+          <button 
+            className="panel-btn" 
+            onClick={() => updateElement(selectedElement.id, { rotation: (selectedElement.rotation + 45) % 360 })}
+            title="R"
+          >
             <RotateIcon /> Rotește
           </button>
-          <button className="panel-btn danger" onClick={() => deleteElement(selectedElement.id)}>
+          <button className="panel-btn danger" onClick={() => deleteElement(selectedElement.id)} title="Delete">
             <TrashIcon /> Șterge
           </button>
         </div>
@@ -127,12 +142,14 @@ const PropertiesPanel: React.FC = () => {
                   const dx = selectedElement.x2 - selectedElement.x;
                   const dy = selectedElement.y2 - selectedElement.y;
                   const currentLength = Math.sqrt(dx*dx + dy*dy);
-                  const ratio = mToPx(newLengthM) / currentLength;
-                  updateElement(selectedElement.id, {
-                    widthM: newLengthM,
-                    x2: selectedElement.x + dx * ratio,
-                    y2: selectedElement.y + dy * ratio
-                  });
+                  if (currentLength > 0) {
+                    const ratio = mToPx(newLengthM) / currentLength;
+                    updateElement(selectedElement.id, {
+                      widthM: newLengthM,
+                      x2: selectedElement.x + dx * ratio,
+                      y2: selectedElement.y + dy * ratio
+                    });
+                  }
                 }
               }}
             />
@@ -147,7 +164,7 @@ const PropertiesPanel: React.FC = () => {
           <div className="panel-section">
             <h4>Dimensiuni</h4>
             <div className="property-row">
-              <label>Lățime</label>
+              <label>{selectedElement.shape === 'round' ? 'Diametru' : 'Lățime'}</label>
               <input
                 type="number"
                 step="0.1"
@@ -209,7 +226,7 @@ const PropertiesPanel: React.FC = () => {
                 checked={selectedElement.canCombine || false}
                 onChange={(e) => updateElement(selectedElement.id, { canCombine: e.target.checked })}
               />
-              <label htmlFor="canCombine">Poate fi combinată cu alte mese</label>
+              <label htmlFor="canCombine">Poate fi combinată</label>
             </div>
           </div>
         </>
@@ -234,7 +251,7 @@ const PropertiesPanel: React.FC = () => {
 
       {/* Position */}
       <div className="panel-section">
-        <h4>Poziție (pixeli)</h4>
+        <h4>Poziție</h4>
         <div className="property-row">
           <label>X</label>
           <input
@@ -242,6 +259,7 @@ const PropertiesPanel: React.FC = () => {
             value={Math.round(selectedElement.x)}
             onChange={(e) => updateElement(selectedElement.id, { x: Number(e.target.value) })}
           />
+          <span className="unit">px</span>
         </div>
         <div className="property-row">
           <label>Y</label>
@@ -250,6 +268,7 @@ const PropertiesPanel: React.FC = () => {
             value={Math.round(selectedElement.y)}
             onChange={(e) => updateElement(selectedElement.id, { y: Number(e.target.value) })}
           />
+          <span className="unit">px</span>
         </div>
       </div>
     </div>
