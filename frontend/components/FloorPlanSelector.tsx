@@ -29,14 +29,13 @@ interface FloorPlanSelectorProps {
 
 const { width } = Dimensions.get('window');
 const PLAN_WIDTH = width - 32;
-const PLAN_HEIGHT = 500;
+const PLAN_HEIGHT = 480;
 
-// Table size based on capacity
 const getTableSize = (capacity: number) => {
-  if (capacity <= 2) return { width: 60, height: 60, shape: 'round' };
-  if (capacity <= 4) return { width: 80, height: 80, shape: 'square' };
-  if (capacity <= 6) return { width: 100, height: 70, shape: 'rect' };
-  return { width: 120, height: 80, shape: 'rect' };
+  if (capacity <= 2) return { width: 55, height: 55, shape: 'round' };
+  if (capacity <= 4) return { width: 70, height: 70, shape: 'square' };
+  if (capacity <= 6) return { width: 90, height: 60, shape: 'rect' };
+  return { width: 110, height: 70, shape: 'rect' };
 };
 
 export default function FloorPlanSelector({
@@ -88,7 +87,7 @@ export default function FloorPlanSelector({
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#FFC107" />
-        <Text style={styles.loadingText}>Se încarcă planul restaurantului...</Text>
+        <Text style={styles.loadingText}>Se încarcă planul...</Text>
       </View>
     );
   }
@@ -100,90 +99,83 @@ export default function FloorPlanSelector({
       <Text style={styles.title}>Selectează Masa</Text>
       <Text style={styles.subtitle}>Apasă pentru a selecta una sau mai multe mese</Text>
 
-      {/* Selected Tables Summary */}
       {selectedTables.length > 0 && (
         <View style={styles.summaryCard}>
-          <View style={styles.summaryRow}>
-            <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
+          <View style={styles.summaryContent}>
+            <View style={styles.summaryIcon}>
+              <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+            </View>
             <View style={styles.summaryText}>
               <Text style={styles.summaryLabel}>Selectate:</Text>
               <Text style={styles.summaryValue}>
                 {selectedTables.map((t) => t.tableNumber).join(' + ')}
               </Text>
-              <Text style={styles.capacityText}>
-                Capacitate totală: {totalCapacity} persoane
-              </Text>
+            </View>
+            <View style={styles.capacityBadge}>
+              <Ionicons name="people" size={14} color="#388E3C" />
+              <Text style={styles.capacityText}>{totalCapacity}</Text>
             </View>
           </View>
         </View>
       )}
 
-      {/* Floor Plan */}
       <ScrollView 
         style={styles.floorPlanScroll}
         contentContainerStyle={styles.floorPlanScrollContent}
       >
         <View style={[styles.floorPlan, { width: PLAN_WIDTH, height: PLAN_HEIGHT }]}>
           
-          {/* Restaurant Background Structure */}
+          {/* Restaurant Areas - Elegant Lines */}
           
-          {/* Kitchen Area */}
-          <View style={[styles.roomArea, styles.kitchen, { 
-            top: 10, 
-            left: 10, 
-            width: PLAN_WIDTH * 0.25, 
-            height: 80 
+          {/* Kitchen */}
+          <View style={[styles.area, styles.kitchen, { 
+            top: 12, 
+            left: 12, 
+            width: PLAN_WIDTH * 0.22, 
+            height: 60 
           }]}>
-            <Ionicons name="restaurant" size={20} color="#999" />
-            <Text style={styles.roomLabel}>Bucătărie</Text>
+            <View style={styles.areaIcon}>
+              <Ionicons name="restaurant-outline" size={16} color="#999" />
+            </View>
+            <Text style={styles.areaLabel}>Bucătărie</Text>
           </View>
 
           {/* Entrance */}
-          <View style={[styles.roomArea, styles.entrance, { 
-            top: PLAN_HEIGHT - 70, 
-            left: PLAN_WIDTH / 2 - 50, 
-            width: 100, 
-            height: 60 
+          <View style={[styles.area, styles.entrance, { 
+            bottom: 12, 
+            left: PLAN_WIDTH / 2 - 45, 
+            width: 90, 
+            height: 45 
           }]}>
-            <Ionicons name="enter" size={20} color="#666" />
-            <Text style={styles.roomLabel}>Intrare</Text>
+            <View style={styles.areaIcon}>
+              <Ionicons name="enter-outline" size={16} color="#666" />
+            </View>
+            <Text style={styles.areaLabel}>Intrare</Text>
           </View>
 
           {/* Restroom */}
-          <View style={[styles.roomArea, styles.restroom, { 
-            top: 10, 
-            right: 10, 
-            width: PLAN_WIDTH * 0.2, 
-            height: 70 
+          <View style={[styles.area, styles.restroom, { 
+            top: 12, 
+            right: 12, 
+            width: PLAN_WIDTH * 0.18, 
+            height: 55 
           }]}>
-            <Ionicons name="man" size={18} color="#999" />
-            <Text style={styles.roomLabel}>Baie</Text>
-          </View>
-
-          {/* Bar/Counter (if space allows) */}
-          {PLAN_WIDTH > 300 && (
-            <View style={[styles.roomArea, styles.bar, { 
-              bottom: 100, 
-              left: 10, 
-              width: PLAN_WIDTH * 0.3, 
-              height: 50 
-            }]}>
-              <Ionicons name="wine" size={18} color="#8D6E63" />
-              <Text style={styles.roomLabel}>Bar</Text>
+            <View style={styles.areaIcon}>
+              <Ionicons name="man-outline" size={16} color="#999" />
             </View>
-          )}
-
-          {/* Dining Area Label */}
-          <View style={styles.diningAreaLabel}>
-            <Text style={styles.diningAreaText}>Zona de Servire</Text>
+            <Text style={styles.areaLabel}>Baie</Text>
           </View>
 
-          {/* Tables */}
+          {/* Watermark */}
+          <View style={styles.watermark}>
+            <Text style={styles.watermarkText}>Plan Restaurant</Text>
+          </View>
+
+          {/* Tables - Elegant Design */}
           {tables.map((table) => {
             const selected = isTableSelected(table.tableNumber);
             const tableSize = getTableSize(table.capacity);
             
-            // Position calculation
             const xPos = (table.x / 100) * PLAN_WIDTH - tableSize.width / 2;
             const yPos = (table.y / 160) * PLAN_HEIGHT - tableSize.height / 2;
 
@@ -197,25 +189,29 @@ export default function FloorPlanSelector({
                     top: yPos,
                     width: tableSize.width,
                     height: tableSize.height,
-                    borderRadius: tableSize.shape === 'round' ? tableSize.width / 2 : 12,
+                    borderRadius: tableSize.shape === 'round' ? tableSize.width / 2 : 8,
                   },
                   !table.available && styles.tableUnavailable,
                   selected && styles.tableSelected,
                 ]}
                 onPress={() => handleTablePress(table)}
                 disabled={!table.available}
+                activeOpacity={0.7}
               >
-                {/* Table Top View - Wood Texture Effect */}
+                {/* Table Surface */}
                 <View style={[
-                  styles.tableTop,
+                  styles.tableSurface,
                   {
-                    borderRadius: tableSize.shape === 'round' ? tableSize.width / 2 : 8,
-                  }
+                    borderRadius: tableSize.shape === 'round' ? tableSize.width / 2 : 6,
+                  },
+                  !table.available && styles.tableSurfaceUnavailable,
+                  selected && styles.tableSurfaceSelected,
                 ]}>
+                  {/* Table Number */}
                   <Text
                     style={[
                       styles.tableNumber,
-                      { fontSize: tableSize.width > 70 ? 16 : 14 },
+                      { fontSize: tableSize.width > 65 ? 14 : 12 },
                       !table.available && styles.tableNumberUnavailable,
                       selected && styles.tableNumberSelected,
                     ]}
@@ -223,53 +219,57 @@ export default function FloorPlanSelector({
                     {table.tableNumber}
                   </Text>
                   
-                  {/* Chairs indicators around table */}
-                  {Array.from({ length: Math.min(table.capacity, 4) }).map((_, idx) => (
-                    <View
-                      key={idx}
-                      style={[
-                        styles.chair,
-                        {
-                          position: 'absolute',
-                          width: 12,
-                          height: 12,
-                          borderRadius: 3,
-                          backgroundColor: selected ? '#FFD54F' : table.available ? '#8D6E63' : '#BDBDBD',
-                        },
-                        idx === 0 && { top: -6, left: '50%', marginLeft: -6 },
-                        idx === 1 && { bottom: -6, left: '50%', marginLeft: -6 },
-                        idx === 2 && { left: -6, top: '50%', marginTop: -6 },
-                        idx === 3 && { right: -6, top: '50%', marginTop: -6 },
-                      ]}
-                    />
-                  ))}
-
+                  {/* Capacity Badge */}
                   <View
                     style={[
-                      styles.capacityBadge,
-                      !table.available && styles.capacityBadgeUnavailable,
-                      selected && styles.capacityBadgeSelected,
+                      styles.tableCapacity,
+                      !table.available && styles.tableCapacityUnavailable,
+                      selected && styles.tableCapacitySelected,
                     ]}
                   >
                     <Ionicons
-                      name="people"
-                      size={12}
-                      color={selected ? '#000' : table.available ? '#FFF' : '#999'}
+                      name="person"
+                      size={10}
+                      color={selected ? '#000' : table.available ? '#666' : '#999'}
                     />
                     <Text
                       style={[
-                        styles.capacityText2,
-                        { color: selected ? '#000' : table.available ? '#FFF' : '#999' },
+                        styles.capacityNumber,
+                        { color: selected ? '#000' : table.available ? '#666' : '#999' },
                       ]}
                     >
                       {table.capacity}
                     </Text>
                   </View>
+
+                  {/* Chairs - Minimalist Dots */}
+                  {Array.from({ length: Math.min(table.capacity, 4) }).map((_, idx) => {
+                    const positions = [
+                      { top: -3, left: '50%', marginLeft: -2.5 },
+                      { bottom: -3, left: '50%', marginLeft: -2.5 },
+                      { left: -3, top: '50%', marginTop: -2.5 },
+                      { right: -3, top: '50%', marginTop: -2.5 },
+                    ];
+                    return (
+                      <View
+                        key={idx}
+                        style={[
+                          styles.chairDot,
+                          positions[idx],
+                          {
+                            backgroundColor: selected ? '#FFC107' : 
+                                          table.available ? '#AAA' : '#CCC',
+                          },
+                        ]}
+                      />
+                    );
+                  })}
                 </View>
 
+                {/* Selected Indicator */}
                 {selected && (
-                  <View style={styles.checkmark}>
-                    <Ionicons name="checkmark" size={18} color="#000" />
+                  <View style={styles.selectedIndicator}>
+                    <Ionicons name="checkmark" size={14} color="#FFF" />
                   </View>
                 )}
               </TouchableOpacity>
@@ -278,18 +278,18 @@ export default function FloorPlanSelector({
         </View>
       </ScrollView>
 
-      {/* Legend */}
+      {/* Legend - Minimalist */}
       <View style={styles.legend}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendCircle, { backgroundColor: '#8D6E63' }]} />
+          <View style={[styles.legendDot, { backgroundColor: '#FAFAFA' }]} />
           <Text style={styles.legendText}>Disponibilă</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendCircle, { backgroundColor: '#FFC107' }]} />
+          <View style={[styles.legendDot, { backgroundColor: '#FFC107' }]} />
           <Text style={styles.legendText}>Selectată</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendCircle, { backgroundColor: '#E0E0E0' }]} />
+          <View style={[styles.legendDot, { backgroundColor: '#E8E8E8' }]} />
           <Text style={styles.legendText}>Ocupată</Text>
         </View>
       </View>
@@ -308,52 +308,71 @@ const styles = StyleSheet.create({
     padding: 32,
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
+    marginTop: 12,
+    fontSize: 14,
+    color: '#999',
+    fontWeight: '400',
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '600',
     color: '#000',
-    marginBottom: 8,
+    marginBottom: 4,
     paddingHorizontal: 16,
+    letterSpacing: -0.3,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#666',
     marginBottom: 16,
     paddingHorizontal: 16,
+    fontWeight: '400',
   },
   summaryCard: {
-    backgroundColor: '#E8F5E9',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#F0F9F1',
+    borderRadius: 10,
+    padding: 12,
     marginHorizontal: 16,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E1F0E3',
   },
-  summaryRow: {
+  summaryContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  summaryIcon: {
+    marginRight: 10,
+  },
   summaryText: {
-    marginLeft: 12,
     flex: 1,
   },
   summaryLabel: {
-    fontSize: 14,
+    fontSize: 11,
     color: '#666',
-    marginBottom: 4,
+    marginBottom: 2,
+    fontWeight: '500',
   },
   summaryValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 15,
+    fontWeight: '600',
     color: '#000',
-    marginBottom: 4,
+    letterSpacing: -0.2,
+  },
+  capacityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E1F0E3',
   },
   capacityText: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#388E3C',
+    marginLeft: 4,
     fontWeight: '600',
   },
   floorPlanScroll: {
@@ -364,156 +383,178 @@ const styles = StyleSheet.create({
   },
   floorPlan: {
     position: 'relative',
-    backgroundColor: '#F5E6D3',
-    borderRadius: 16,
+    backgroundColor: '#FAFAFA',
+    borderRadius: 12,
     overflow: 'hidden',
-    borderWidth: 3,
-    borderColor: '#8D6E63',
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
   },
-  roomArea: {
+  area: {
     position: 'absolute',
-    borderWidth: 2,
+    borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: '#999',
-    borderRadius: 8,
+    borderColor: '#DDD',
+    borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
   },
   kitchen: {
-    backgroundColor: 'rgba(255, 235, 235, 0.6)',
+    backgroundColor: 'rgba(255, 240, 240, 0.3)',
+    borderColor: '#E8D4D4',
   },
   entrance: {
-    backgroundColor: 'rgba(200, 230, 201, 0.6)',
+    backgroundColor: 'rgba(230, 245, 230, 0.3)',
+    borderColor: '#D4E8D4',
   },
   restroom: {
-    backgroundColor: 'rgba(225, 245, 254, 0.6)',
+    backgroundColor: 'rgba(240, 248, 255, 0.3)',
+    borderColor: '#D4DDE8',
   },
-  bar: {
-    backgroundColor: 'rgba(255, 243, 224, 0.6)',
+  areaIcon: {
+    marginBottom: 2,
   },
-  roomLabel: {
-    fontSize: 11,
-    color: '#666',
-    fontWeight: '600',
-    marginTop: 4,
+  areaLabel: {
+    fontSize: 10,
+    color: '#999',
+    fontWeight: '500',
+    letterSpacing: 0.3,
   },
-  diningAreaLabel: {
+  watermark: {
     position: 'absolute',
     top: '50%',
     left: '50%',
-    transform: [{ translateX: -60 }, { translateY: -15 }],
-    opacity: 0.15,
+    transform: [{ translateX: -60 }, { translateY: -10 }],
+    opacity: 0.06,
   },
-  diningAreaText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#8D6E63',
+  watermarkText: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#000',
+    letterSpacing: 1,
   },
   table: {
     position: 'absolute',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
   },
   tableSelected: {
-    elevation: 6,
-    shadowOpacity: 0.4,
+    zIndex: 10,
   },
   tableUnavailable: {
-    elevation: 1,
-    shadowOpacity: 0.1,
+    opacity: 0.5,
   },
-  tableTop: {
+  tableSurface: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#8D6E63',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#6D4C41',
+    borderWidth: 1.5,
+    borderColor: '#D0D0D0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  chair: {
-    borderWidth: 1,
-    borderColor: '#5D4037',
+  tableSurfaceSelected: {
+    backgroundColor: '#FFF8E1',
+    borderColor: '#FFC107',
+    borderWidth: 2,
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  tableSurfaceUnavailable: {
+    backgroundColor: '#F5F5F5',
+    borderColor: '#E0E0E0',
   },
   tableNumber: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFF',
-    marginBottom: 4,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 3,
+    letterSpacing: -0.2,
   },
   tableNumberSelected: {
     color: '#000',
+    fontWeight: '700',
   },
   tableNumberUnavailable: {
-    color: '#999',
+    color: '#AAA',
   },
-  capacityBadge: {
+  tableCapacity: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-    marginTop: 4,
+    backgroundColor: '#F5F5F5',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
   },
-  capacityBadgeSelected: {
+  tableCapacitySelected: {
     backgroundColor: '#FFFFFF',
+    borderColor: '#FFC107',
   },
-  capacityBadgeUnavailable: {
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+  tableCapacityUnavailable: {
+    backgroundColor: '#FAFAFA',
+    borderColor: '#F0F0F0',
   },
-  capacityText2: {
-    fontSize: 12,
-    marginLeft: 3,
-    fontWeight: 'bold',
+  capacityNumber: {
+    fontSize: 10,
+    marginLeft: 2,
+    fontWeight: '600',
   },
-  checkmark: {
+  chairDot: {
     position: 'absolute',
-    top: -8,
-    right: -8,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
+  selectedIndicator: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
     backgroundColor: '#4CAF50',
-    borderRadius: 15,
-    width: 30,
-    height: 30,
+    borderRadius: 12,
+    width: 24,
+    height: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
+    borderWidth: 2,
     borderColor: '#FFFFFF',
-    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
   legend: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    paddingVertical: 16,
+    paddingVertical: 14,
     paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAFAFA',
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+    borderTopColor: '#E5E5E5',
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  legendCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    marginRight: 8,
-    borderWidth: 2,
-    borderColor: '#6D4C41',
+  legendDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    marginRight: 6,
+    borderWidth: 1.5,
+    borderColor: '#D0D0D0',
   },
   legendText: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#666',
-    fontWeight: '600',
+    fontWeight: '500',
   },
 });
