@@ -5,26 +5,42 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   Alert,
-  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useStore } from '../store/useStore';
 import { api } from '../utils/api';
 import { format, addDays } from 'date-fns';
+import FloorPlanSelector from '../components/FloorPlanSelector';
+
+interface Table {
+  tableNumber: string;
+  capacity: number;
+  x: number;
+  y: number;
+  available: boolean;
+}
+
+type Step = 'tables' | 'datetime' | 'food-decision' | 'confirm';
 
 export default function ReservationScreen() {
   const router = useRouter();
   const { currentRestaurant, cart, getTotalPrice, clearCart } = useStore();
   
-  const [step, setStep] = useState<'details' | 'food-decision' | 'menu' | 'confirm'>('details');
+  // Step 1: Tables
+  const [step, setStep] = useState<Step>('tables');
+  const [selectedTables, setSelectedTables] = useState<Table[]>([]);
+  const [totalCapacity, setTotalCapacity] = useState(0);
+  
+  // Step 2: Date/Time
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [selectedTime, setSelectedTime] = useState('19:00');
   const [duration, setDuration] = useState(60);
-  const [people, setPeople] = useState(2);
+  
+  // Step 3: Food decision
   const [wantsFoodPreOrder, setWantsFoodPreOrder] = useState<boolean | null>(null);
+  
   const [loading, setLoading] = useState(false);
 
   const durations = [30, 60, 90, 120];
@@ -38,14 +54,19 @@ export default function ReservationScreen() {
   });
 
   const handleNext = () => {
-    if (step === 'details') {
+    if (step === 'tables') {
+      if (selectedTables.length === 0) {
+        Alert.alert('Select Tables', 'Please select at least one table');
+        return;
+      }
+      setStep('datetime');
+    } else if (step === 'datetime') {
       setStep('food-decision');
     } else if (step === 'food-decision') {
       if (wantsFoodPreOrder === true) {
-        // Navigate to restaurant menu to add food
         Alert.alert(
           'Add Food',
-          'You can add items from the restaurant menu. Go back to the restaurant page to add items to cart, then return here.',
+          'Go back to the restaurant menu to add items to your cart, then return to complete your reservation.',
           [
             {
               text: 'Go to Menu',
@@ -68,6 +89,12 @@ export default function ReservationScreen() {
     }
   };
 
+  const handleBack = () => {
+    if (step === 'datetime') setStep('tables');
+    else if (step === 'food-decision') setStep('datetime');
+    else if (step === 'confirm') setStep('food-decision');
+  };
+
   const handleConfirmReservation = async () => {
     if (!currentRestaurant) {
       Alert.alert('Error', 'Restaurant information not available');
@@ -82,7 +109,12 @@ export default function ReservationScreen() {
         date: selectedDate,
         time: selectedTime,
         duration,
-        people,
+        people: totalCapacity,
+        selectedTables: selectedTables.map(t => ({
+          tableNumber: t.tableNumber,
+          capacity: t.capacity,
+        })),
+        totalCapacity,
         preOrderedFood: wantsFoodPreOrder ? cart : [],
         totalPrice: wantsFoodPreOrder ? getTotalPrice() : 0,
       };
@@ -100,9 +132,31 @@ export default function ReservationScreen() {
     }
   };
 
-  const renderDetailsStep = () => (
-    <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>Reservation Details</Text>
+  const renderTablesStep = () => (
+    <FloorPlanSelector
+      restaurantId={currentRestaurant?.id || ''}
+      onTablesSelected={(tables, capacity) => {
+        setSelectedTables(tables);
+        setTotalCapacity(capacity);
+      }}
+      selectedTables={selectedTables}
+    />
+  );
+
+  const renderDateTimeStep = () => (
+    <ScrollView style={styles.stepContent}>
+      <Text style={styles.stepTitle}>When would you like to visit?</Text>
+
+      {/* Selected Tables Reminder */}
+      <View style={styles.reminderCard}>
+        <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
+        <View style={styles.reminderText}>
+          <Text style={styles.reminderLabel}>Selected Tables:</Text>
+          <Text style={styles.reminderValue}>
+            {selectedTables.map(t => t.tableNumber).join(' + ')} ({totalCapacity} people)
+          </Text>
+        </View>
+      </View>
 
       {/* Date Selection */}
       <View style={styles.section}>
@@ -181,31 +235,11 @@ export default function ReservationScreen() {
           ))}
         </View>
       </View>
-
-      {/* Number of People */}
-      <View style={styles.section}>
-        <Text style={styles.label}>Number of People</Text>
-        <View style={styles.counterContainer}>
-          <TouchableOpacity
-            style={styles.counterButton}
-            onPress={() => setPeople(Math.max(1, people - 1))}
-          >
-            <Ionicons name="remove" size={24} color="#000" />
-          </TouchableOpacity>
-          <Text style={styles.counterValue}>{people}</Text>
-          <TouchableOpacity
-            style={styles.counterButton}
-            onPress={() => setPeople(Math.min(20, people + 1))}
-          >
-            <Ionicons name="add" size={24} color="#000" />
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
+    </ScrollView>
   );
 
   const renderFoodDecisionStep = () => (
-    <View style={styles.stepContent}>
+    <ScrollView style={styles.stepContent}>
       <Text style={styles.stepTitle}>Pre-order Food?</Text>
       <Text style={styles.stepDescription}>
         Would you like to pre-order food for this reservation? Your food will be prepared and ready when you arrive.
@@ -246,11 +280,11 @@ export default function ReservationScreen() {
           Reserve the table only, order when you arrive
         </Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 
   const renderConfirmStep = () => (
-    <View style={styles.stepContent}>
+    <ScrollView style={styles.stepContent}>
       <Text style={styles.stepTitle}>Confirm Reservation</Text>
 
       <View style={styles.confirmCard}>
@@ -258,6 +292,20 @@ export default function ReservationScreen() {
           <Ionicons name="business" size={20} color="#666" />
           <Text style={styles.confirmLabel}>Restaurant</Text>
           <Text style={styles.confirmValue}>{currentRestaurant?.name}</Text>
+        </View>
+
+        <View style={styles.confirmRow}>
+          <Ionicons name="grid" size={20} color="#666" />
+          <Text style={styles.confirmLabel}>Tables</Text>
+          <Text style={styles.confirmValue}>
+            {selectedTables.map(t => t.tableNumber).join(' + ')}
+          </Text>
+        </View>
+
+        <View style={styles.confirmRow}>
+          <Ionicons name="people" size={20} color="#666" />
+          <Text style={styles.confirmLabel}>Capacity</Text>
+          <Text style={styles.confirmValue}>{totalCapacity} people</Text>
         </View>
 
         <View style={styles.confirmRow}>
@@ -276,12 +324,6 @@ export default function ReservationScreen() {
           <Ionicons name="hourglass" size={20} color="#666" />
           <Text style={styles.confirmLabel}>Duration</Text>
           <Text style={styles.confirmValue}>{duration} minutes</Text>
-        </View>
-
-        <View style={styles.confirmRow}>
-          <Ionicons name="people" size={20} color="#666" />
-          <Text style={styles.confirmLabel}>People</Text>
-          <Text style={styles.confirmValue}>{people}</Text>
         </View>
       </View>
 
@@ -304,43 +346,37 @@ export default function ReservationScreen() {
           </View>
         </View>
       )}
-    </View>
+    </ScrollView>
   );
+
+  const getProgressWidth = () => {
+    if (step === 'tables') return '25%';
+    if (step === 'datetime') return '50%';
+    if (step === 'food-decision') return '75%';
+    return '100%';
+  };
 
   return (
     <View style={styles.container}>
-      {/* Progress Indicator */}
+      {/* Progress Bar */}
       <View style={styles.progressBar}>
-        <View
-          style={[
-            styles.progressFill,
-            {
-              width:
-                step === 'details'
-                  ? '33%'
-                  : step === 'food-decision'
-                  ? '66%'
-                  : '100%',
-            },
-          ]}
-        />
+        <View style={[styles.progressFill, { width: getProgressWidth() }]} />
       </View>
 
-      <ScrollView style={styles.scrollView}>
-        {step === 'details' && renderDetailsStep()}
+      {/* Step Content */}
+      <View style={styles.content}>
+        {step === 'tables' && renderTablesStep()}
+        {step === 'datetime' && renderDateTimeStep()}
         {step === 'food-decision' && renderFoodDecisionStep()}
         {step === 'confirm' && renderConfirmStep()}
-      </ScrollView>
+      </View>
 
       {/* Navigation Buttons */}
       <View style={styles.footer}>
-        {step !== 'details' && (
+        {step !== 'tables' && (
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => {
-              if (step === 'food-decision') setStep('details');
-              else if (step === 'confirm') setStep('food-decision');
-            }}
+            onPress={handleBack}
           >
             <Text style={styles.backButtonText}>Back</Text>
           </TouchableOpacity>
@@ -348,11 +384,16 @@ export default function ReservationScreen() {
         <TouchableOpacity
           style={[
             styles.nextButton,
+            (step === 'tables' && selectedTables.length === 0) && styles.buttonDisabled,
             (step === 'food-decision' && wantsFoodPreOrder === null) && styles.buttonDisabled,
             loading && styles.buttonDisabled,
           ]}
           onPress={handleNext}
-          disabled={(step === 'food-decision' && wantsFoodPreOrder === null) || loading}
+          disabled={
+            (step === 'tables' && selectedTables.length === 0) ||
+            (step === 'food-decision' && wantsFoodPreOrder === null) ||
+            loading
+          }
         >
           <Text style={styles.nextButtonText}>
             {loading
@@ -380,10 +421,11 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: '#FFC107',
   },
-  scrollView: {
+  content: {
     flex: 1,
   },
   stepContent: {
+    flex: 1,
     padding: 16,
   },
   stepTitle: {
@@ -397,6 +439,28 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 24,
     lineHeight: 22,
+  },
+  reminderCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E9',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+  },
+  reminderText: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  reminderLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  reminderValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#388E3C',
   },
   section: {
     marginBottom: 24,
@@ -444,30 +508,6 @@ const styles = StyleSheet.create({
     margin: 4,
     borderWidth: 2,
     borderColor: 'transparent',
-  },
-  counterContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-  },
-  counterButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#FFC107',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  counterValue: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#000',
-    marginHorizontal: 32,
-    minWidth: 60,
-    textAlign: 'center',
   },
   decisionCard: {
     backgroundColor: '#FFFFFF',
