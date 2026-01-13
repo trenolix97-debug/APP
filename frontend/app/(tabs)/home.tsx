@@ -301,4 +301,42 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
+  skeletonCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    marginBottom: 16,
+    overflow: 'hidden',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  skeletonImage: {
+    height: 160,
+    backgroundColor: '#F0F0F0',
+  },
+  skeletonContent: {
+    padding: 16,
+  },
+  skeletonTitle: {
+    height: 20,
+    backgroundColor: '#E8E8E8',
+    borderRadius: 4,
+    marginBottom: 12,
+    width: '60%',
+  },
+  skeletonLine: {
+    height: 14,
+    backgroundColor: '#F0F0F0',
+    borderRadius: 4,
+    marginBottom: 8,
+    width: '80%',
+  },
+  skeletonLineSmall: {
+    height: 14,
+    backgroundColor: '#F0F0F0',
+    borderRadius: 4,
+    width: '40%',
+  },
 });
