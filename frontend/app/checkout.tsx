@@ -19,7 +19,24 @@ export default function CheckoutScreen() {
   
   const [selectedOrderType, setSelectedOrderType] = useState<'delivery' | 'pickup' | 'dine-in' | null>(null);
   const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [timeOption, setTimeOption] = useState<'now' | 'custom' | null>(null);
+  const [customTime, setCustomTime] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Generate time slots for next 12 hours
+  const generateTimeSlots = () => {
+    const slots = [];
+    const now = new Date();
+    for (let i = 0; i < 24; i++) {
+      const time = new Date(now.getTime() + i * 30 * 60000); // 30 min intervals
+      const hours = time.getHours().toString().padStart(2, '0');
+      const minutes = time.getMinutes().toString().padStart(2, '0');
+      slots.push(`${hours}:${minutes}`);
+    }
+    return slots;
+  };
+
+  const timeSlots = generateTimeSlots();
 
   const handlePlaceOrder = async () => {
     if (!selectedOrderType) {
