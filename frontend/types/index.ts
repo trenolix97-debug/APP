@@ -14,6 +14,7 @@ export interface Restaurant {
   id: string;
   name: string;
   logo?: string;
+  heroImage?: string;
   cuisine: string;
   rating: number;
   priceRange: string;
