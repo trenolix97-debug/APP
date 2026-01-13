@@ -2,10 +2,12 @@ import { Tabs, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useStore } from '../../store/useStore';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function TabLayout() {
   const cart = useStore((state) => state.cart);
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const { t } = useLanguage();
 
   return (
     <Tabs
@@ -36,17 +38,17 @@ export default function TabLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Home',
+          title: t.tabs.home,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),
-          headerTitle: 'Discover',
+          headerTitle: t.home.title,
         }}
       />
       <Tabs.Screen
         name="map"
         options={{
-          title: 'Map',
+          title: t.tabs.map,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="map" size={size} color={color} />
           ),
@@ -55,17 +57,17 @@ export default function TabLayout() {
       <Tabs.Screen
         name="ai"
         options={{
-          title: 'AI',
+          title: t.tabs.ai,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="chatbubbles" size={size} color={color} />
           ),
-          headerTitle: 'AI Assistant',
+          headerTitle: t.ai.title,
         }}
       />
       <Tabs.Screen
         name="orders"
         options={{
-          title: 'Orders',
+          title: t.tabs.orders,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="receipt" size={size} color={color} />
           ),
@@ -74,7 +76,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: t.tabs.profile,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           ),
