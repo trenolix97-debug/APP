@@ -167,16 +167,108 @@ export default function CheckoutScreen() {
         {/* Delivery Address */}
         {selectedOrderType === 'delivery' && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Delivery Address</Text>
+            <Text style={styles.sectionTitle}>Adresa de Livrare</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter your delivery address"
+              placeholder="Introduceți adresa de livrare"
               value={deliveryAddress}
               onChangeText={setDeliveryAddress}
               multiline
               numberOfLines={3}
               placeholderTextColor="#999"
             />
+          </View>
+        )}
+
+        {/* Timing Selection */}
+        {selectedOrderType && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              {selectedOrderType === 'delivery' ? 'Când doriți livrarea?' : 
+               selectedOrderType === 'pickup' ? 'Când ridicați comanda?' : 
+               'Când ajungeți la restaurant?'}
+            </Text>
+            
+            <TouchableOpacity
+              style={[
+                styles.timeOptionCard,
+                timeOption === 'now' && styles.timeOptionCardActive,
+              ]}
+              onPress={() => {
+                setTimeOption('now');
+                setCustomTime('');
+              }}
+            >
+              <Ionicons 
+                name="flash" 
+                size={32} 
+                color={timeOption === 'now' ? '#FFC107' : '#666'} 
+              />
+              <View style={styles.timeOptionContent}>
+                <Text style={styles.timeOptionTitle}>Acum (ASAP)</Text>
+                <Text style={styles.timeOptionDescription}>
+                  Cât mai repede posibil
+                </Text>
+              </View>
+              {timeOption === 'now' && (
+                <Ionicons name="checkmark-circle" size={24} color="#FFC107" />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.timeOptionCard,
+                timeOption === 'custom' && styles.timeOptionCardActive,
+              ]}
+              onPress={() => setTimeOption('custom')}
+            >
+              <Ionicons 
+                name="time" 
+                size={32} 
+                color={timeOption === 'custom' ? '#FFC107' : '#666'} 
+              />
+              <View style={styles.timeOptionContent}>
+                <Text style={styles.timeOptionTitle}>Alege Ora</Text>
+                <Text style={styles.timeOptionDescription}>
+                  Selectează timpul exact
+                </Text>
+              </View>
+              {timeOption === 'custom' && (
+                <Ionicons name="checkmark-circle" size={24} color="#FFC107" />
+              )}
+            </TouchableOpacity>
+
+            {/* Time Picker */}
+            {timeOption === 'custom' && (
+              <View style={styles.timePickerContainer}>
+                <Text style={styles.timePickerLabel}>Selectează ora:</Text>
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.timeSlotScroll}
+                >
+                  {timeSlots.map((slot) => (
+                    <TouchableOpacity
+                      key={slot}
+                      style={[
+                        styles.timeSlot,
+                        customTime === slot && styles.timeSlotActive,
+                      ]}
+                      onPress={() => setCustomTime(slot)}
+                    >
+                      <Text
+                        style={[
+                          styles.timeSlotText,
+                          customTime === slot && styles.timeSlotTextActive,
+                        ]}
+                      >
+                        {slot}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
           </View>
         )}
 
