@@ -83,9 +83,17 @@ export default function RestaurantDetailScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Hero Section */}
         <View style={styles.hero}>
-          <View style={styles.heroPlaceholder}>
-            <Ionicons name="restaurant" size={64} color="#999" />
-          </View>
+          {restaurant.heroImage ? (
+            <Image 
+              source={{ uri: restaurant.heroImage }} 
+              style={styles.heroImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={styles.heroPlaceholder}>
+              <Ionicons name="restaurant" size={64} color="#999" />
+            </View>
+          )}
         </View>
 
         {/* Restaurant Info */}
