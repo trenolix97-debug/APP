@@ -411,6 +411,24 @@ async def get_reservation(reservation_id: str):
     except:
         raise HTTPException(status_code=400, detail="Invalid reservation ID")
 
+@api_router.get("/restaurants/{restaurant_id}/floor-plan")
+async def get_floor_plan(restaurant_id: str):
+    """Get restaurant floor plan with table layout"""
+    # Mock floor plan data - in real app this would be stored in database
+    floor_plans = {
+        "default": [
+            {"tableNumber": "T1", "capacity": 2, "x": 20, "y": 20, "available": True},
+            {"tableNumber": "T2", "capacity": 2, "x": 20, "y": 60, "available": True},
+            {"tableNumber": "T3", "capacity": 4, "x": 60, "y": 20, "available": True},
+            {"tableNumber": "T4", "capacity": 4, "x": 60, "y": 60, "available": True},
+            {"tableNumber": "T5", "capacity": 6, "x": 20, "y": 100, "available": True},
+            {"tableNumber": "T6", "capacity": 6, "x": 60, "y": 100, "available": True},
+            {"tableNumber": "T7", "capacity": 8, "x": 20, "y": 140, "available": True},
+            {"tableNumber": "T8", "capacity": 2, "x": 60, "y": 140, "available": True},
+        ]
+    }
+    return {"restaurantId": restaurant_id, "tables": floor_plans["default"]}
+
 # Include the router in the main app
 app.include_router(api_router)
 
