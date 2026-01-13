@@ -3,23 +3,25 @@ export type ToolType =
   | 'wall' 
   | 'door' 
   | 'window' 
-  | 'rectangle' 
   | 'line'
   | 'text'
   | 'column'
   | 'table'
+  | 'measure'
   | 'pan';
 
-export type TableShape = 'square' | 'round' | 'rectangle';
+export type AngleMode = 'free' | '90' | '45';
+
+export type TableShape = 'square' | 'round' | 'rectangle' | 'oval';
 
 export interface TableTemplate {
   id: string;
   name: string;
   shape: TableShape;
   capacity: number;
-  width: number;
-  height: number;
-  color: string;
+  widthM: number;  // width in meters
+  heightM: number; // height in meters (or diameter for round)
+  canCombine: boolean; // can be combined with other tables
 }
 
 export interface FloorElement {
@@ -27,18 +29,26 @@ export interface FloorElement {
   type: 'wall' | 'door' | 'window' | 'rectangle' | 'column' | 'table' | 'text' | 'line';
   x: number;
   y: number;
-  width?: number;
-  height?: number;
+  x2?: number; // end point for lines/walls
+  y2?: number;
+  widthM?: number;  // width in meters
+  heightM?: number; // height in meters
   rotation: number;
-  points?: number[]; // for lines/walls
-  text?: string; // for text elements
+  text?: string;
   fontSize?: number;
   // Table specific
   tableTemplateId?: string;
   capacity?: number;
   shape?: TableShape;
   tableNumber?: number;
-  color?: string;
+  canCombine?: boolean;
+  combinedWith?: string[]; // IDs of connected tables
+}
+
+export interface FloorPlan {
+  id: string;
+  name: string;
+  elements: FloorElement[];
 }
 
 export interface Project {
@@ -46,10 +56,15 @@ export interface Project {
   name: string;
   createdAt: string;
   updatedAt: string;
-  canvasWidth: number;
-  canvasHeight: number;
-  elements: FloorElement[];
+  scale: number; // pixels per meter
+  floorPlans: FloorPlan[];
+  activeFloorPlanId: string;
   tableTemplates: TableTemplate[];
+}
+
+export interface MeasurePoint {
+  x: number;
+  y: number;
 }
 
 export interface EditorState {
@@ -57,25 +72,43 @@ export interface EditorState {
   activeTool: ToolType;
   setActiveTool: (tool: ToolType) => void;
   
+  // Angle mode
+  angleMode: AngleMode;
+  setAngleMode: (mode: AngleMode) => void;
+  
+  // Scale (pixels per meter)
+  scale: number;
+  setScale: (scale: number) => void;
+  
   // Canvas state
   zoom: number;
   setZoom: (zoom: number) => void;
   panOffset: { x: number; y: number };
   setPanOffset: (offset: { x: number; y: number }) => void;
   
-  // Grid
+  // Grid & Snap
   showGrid: boolean;
   toggleGrid: () => void;
   snapToGrid: boolean;
   toggleSnapToGrid: () => void;
-  gridSize: number;
+  snapToCorners: boolean;
+  toggleSnapToCorners: () => void;
+  gridSizeM: number; // grid size in meters
   
   // Selection
   selectedElementId: string | null;
   setSelectedElementId: (id: string | null) => void;
   
-  // Elements
-  elements: FloorElement[];
+  // Floor Plans
+  floorPlans: FloorPlan[];
+  activeFloorPlanId: string;
+  addFloorPlan: (name: string) => void;
+  removeFloorPlan: (id: string) => void;
+  renameFloorPlan: (id: string, name: string) => void;
+  setActiveFloorPlan: (id: string) => void;
+  
+  // Elements (for active floor plan)
+  getElements: () => FloorElement[];
   addElement: (element: FloorElement) => void;
   updateElement: (id: string, updates: Partial<FloorElement>) => void;
   deleteElement: (id: string) => void;
@@ -85,6 +118,11 @@ export interface EditorState {
   addTableTemplate: (template: TableTemplate) => void;
   updateTableTemplate: (id: string, updates: Partial<TableTemplate>) => void;
   deleteTableTemplate: (id: string) => void;
+  
+  // Measure tool
+  measureStart: MeasurePoint | null;
+  measureEnd: MeasurePoint | null;
+  setMeasurePoints: (start: MeasurePoint | null, end: MeasurePoint | null) => void;
   
   // Project
   projectName: string;

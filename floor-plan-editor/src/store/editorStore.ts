@@ -1,47 +1,112 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import { EditorState, ToolType, FloorElement, TableTemplate, Project } from '../types';
+import { EditorState, ToolType, FloorElement, TableTemplate, Project, FloorPlan, AngleMode, MeasurePoint } from '../types';
 
 const DEFAULT_TEMPLATES: TableTemplate[] = [
-  { id: 'tpl-1', name: '2 Persoane Rotund', shape: 'round', capacity: 2, width: 60, height: 60, color: '#3b82f6' },
-  { id: 'tpl-2', name: '4 Persoane Pătrat', shape: 'square', capacity: 4, width: 80, height: 80, color: '#22c55e' },
-  { id: 'tpl-3', name: '6 Persoane Dreptunghi', shape: 'rectangle', capacity: 6, width: 120, height: 80, color: '#f59e0b' },
+  { id: 'tpl-1', name: 'Masă 2 pers. rotundă', shape: 'round', capacity: 2, widthM: 0.8, heightM: 0.8, canCombine: false },
+  { id: 'tpl-2', name: 'Masă 4 pers. pătrată', shape: 'square', capacity: 4, widthM: 0.9, heightM: 0.9, canCombine: true },
+  { id: 'tpl-3', name: 'Masă 6 pers. dreptunghi', shape: 'rectangle', capacity: 6, widthM: 1.8, heightM: 0.9, canCombine: true },
+  { id: 'tpl-4', name: 'Masă 8 pers. ovală', shape: 'oval', capacity: 8, widthM: 2.4, heightM: 1.2, canCombine: false },
 ];
+
+const DEFAULT_FLOOR_PLAN: FloorPlan = {
+  id: 'fp-1',
+  name: 'Interior',
+  elements: []
+};
 
 export const useEditorStore = create<EditorState>((set, get) => ({
   // Tool
   activeTool: 'select',
   setActiveTool: (tool: ToolType) => set({ activeTool: tool }),
   
+  // Angle mode
+  angleMode: 'free',
+  setAngleMode: (mode: AngleMode) => set({ angleMode: mode }),
+  
+  // Scale: 50 pixels = 1 meter by default
+  scale: 50,
+  setScale: (scale: number) => set({ scale }),
+  
   // Canvas
   zoom: 1,
-  setZoom: (zoom: number) => set({ zoom: Math.max(0.1, Math.min(3, zoom)) }),
-  panOffset: { x: 0, y: 0 },
+  setZoom: (zoom: number) => set({ zoom: Math.max(0.2, Math.min(4, zoom)) }),
+  panOffset: { x: 100, y: 100 },
   setPanOffset: (offset) => set({ panOffset: offset }),
   
-  // Grid
+  // Grid & Snap
   showGrid: true,
   toggleGrid: () => set((state) => ({ showGrid: !state.showGrid })),
   snapToGrid: true,
   toggleSnapToGrid: () => set((state) => ({ snapToGrid: !state.snapToGrid })),
-  gridSize: 20,
+  snapToCorners: true,
+  toggleSnapToCorners: () => set((state) => ({ snapToCorners: !state.snapToCorners })),
+  gridSizeM: 0.5, // 0.5 meter grid
   
   // Selection
   selectedElementId: null,
   setSelectedElementId: (id) => set({ selectedElementId: id }),
   
-  // Elements
-  elements: [],
-  addElement: (element) => set((state) => ({ 
-    elements: [...state.elements, element] 
+  // Floor Plans
+  floorPlans: [DEFAULT_FLOOR_PLAN],
+  activeFloorPlanId: 'fp-1',
+  
+  addFloorPlan: (name: string) => {
+    const newPlan: FloorPlan = {
+      id: uuidv4(),
+      name,
+      elements: []
+    };
+    set((state) => ({
+      floorPlans: [...state.floorPlans, newPlan],
+      activeFloorPlanId: newPlan.id
+    }));
+  },
+  
+  removeFloorPlan: (id: string) => set((state) => {
+    if (state.floorPlans.length <= 1) return state;
+    const newPlans = state.floorPlans.filter(p => p.id !== id);
+    return {
+      floorPlans: newPlans,
+      activeFloorPlanId: state.activeFloorPlanId === id ? newPlans[0].id : state.activeFloorPlanId
+    };
+  }),
+  
+  renameFloorPlan: (id: string, name: string) => set((state) => ({
+    floorPlans: state.floorPlans.map(p => p.id === id ? { ...p, name } : p)
   })),
-  updateElement: (id, updates) => set((state) => ({
-    elements: state.elements.map(el => 
-      el.id === id ? { ...el, ...updates } : el
+  
+  setActiveFloorPlan: (id: string) => set({ activeFloorPlanId: id, selectedElementId: null }),
+  
+  // Elements
+  getElements: () => {
+    const state = get();
+    const plan = state.floorPlans.find(p => p.id === state.activeFloorPlanId);
+    return plan?.elements || [];
+  },
+  
+  addElement: (element) => set((state) => ({
+    floorPlans: state.floorPlans.map(p => 
+      p.id === state.activeFloorPlanId 
+        ? { ...p, elements: [...p.elements, element] }
+        : p
     )
   })),
+  
+  updateElement: (id, updates) => set((state) => ({
+    floorPlans: state.floorPlans.map(p => 
+      p.id === state.activeFloorPlanId
+        ? { ...p, elements: p.elements.map(el => el.id === id ? { ...el, ...updates } : el) }
+        : p
+    )
+  })),
+  
   deleteElement: (id) => set((state) => ({
-    elements: state.elements.filter(el => el.id !== id),
+    floorPlans: state.floorPlans.map(p => 
+      p.id === state.activeFloorPlanId
+        ? { ...p, elements: p.elements.filter(el => el.id !== id) }
+        : p
+    ),
     selectedElementId: state.selectedElementId === id ? null : state.selectedElementId
   })),
   
@@ -59,16 +124,28 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     tableTemplates: state.tableTemplates.filter(t => t.id !== id)
   })),
   
+  // Measure
+  measureStart: null,
+  measureEnd: null,
+  setMeasurePoints: (start, end) => set({ measureStart: start, measureEnd: end }),
+  
   // Project
   projectName: 'Proiect Nou',
   setProjectName: (name) => set({ projectName: name }),
   
   // Actions
-  clearCanvas: () => set({ elements: [], selectedElementId: null }),
+  clearCanvas: () => set((state) => ({
+    floorPlans: state.floorPlans.map(p =>
+      p.id === state.activeFloorPlanId ? { ...p, elements: [] } : p
+    ),
+    selectedElementId: null
+  })),
   
   loadProject: (project: Project) => set({
     projectName: project.name,
-    elements: project.elements,
+    scale: project.scale || 50,
+    floorPlans: project.floorPlans,
+    activeFloorPlanId: project.activeFloorPlanId,
     tableTemplates: project.tableTemplates.length > 0 ? project.tableTemplates : DEFAULT_TEMPLATES,
     selectedElementId: null
   }),
@@ -80,9 +157,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       name: state.projectName,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      canvasWidth: 2000,
-      canvasHeight: 2000,
-      elements: state.elements,
+      scale: state.scale,
+      floorPlans: state.floorPlans,
+      activeFloorPlanId: state.activeFloorPlanId,
       tableTemplates: state.tableTemplates
     };
   }
