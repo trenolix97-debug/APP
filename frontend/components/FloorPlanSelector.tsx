@@ -29,7 +29,15 @@ interface FloorPlanSelectorProps {
 
 const { width } = Dimensions.get('window');
 const PLAN_WIDTH = width - 32;
-const PLAN_HEIGHT = 450;
+const PLAN_HEIGHT = 500;
+
+// Table size based on capacity
+const getTableSize = (capacity: number) => {
+  if (capacity <= 2) return { width: 60, height: 60, shape: 'round' };
+  if (capacity <= 4) return { width: 80, height: 80, shape: 'square' };
+  if (capacity <= 6) return { width: 100, height: 70, shape: 'rect' };
+  return { width: 120, height: 80, shape: 'rect' };
+};
 
 export default function FloorPlanSelector({
   restaurantId,
@@ -63,10 +71,8 @@ export default function FloorPlanSelector({
     let newSelectedTables: Table[];
 
     if (isSelected) {
-      // Deselect
       newSelectedTables = selectedTables.filter((t) => t.tableNumber !== table.tableNumber);
     } else {
-      // Select
       newSelectedTables = [...selectedTables, table];
     }
 
@@ -82,7 +88,7 @@ export default function FloorPlanSelector({
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#FFC107" />
-        <Text style={styles.loadingText}>Loading floor plan...</Text>
+        <Text style={styles.loadingText}>Se încarcă planul restaurantului...</Text>
       </View>
     );
   }
@@ -91,8 +97,8 @@ export default function FloorPlanSelector({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Select Your Table</Text>
-      <Text style={styles.subtitle}>Tap to select one or multiple tables</Text>
+      <Text style={styles.title}>Selectează Masa</Text>
+      <Text style={styles.subtitle}>Apasă pentru a selecta una sau mai multe mese</Text>
 
       {/* Selected Tables Summary */}
       {selectedTables.length > 0 && (
@@ -100,12 +106,12 @@ export default function FloorPlanSelector({
           <View style={styles.summaryRow}>
             <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
             <View style={styles.summaryText}>
-              <Text style={styles.summaryLabel}>Selected:</Text>
+              <Text style={styles.summaryLabel}>Selectate:</Text>
               <Text style={styles.summaryValue}>
                 {selectedTables.map((t) => t.tableNumber).join(' + ')}
               </Text>
               <Text style={styles.capacityText}>
-                Total capacity: {totalCapacity} people
+                Capacitate totală: {totalCapacity} persoane
               </Text>
             </View>
           </View>
@@ -118,14 +124,68 @@ export default function FloorPlanSelector({
         contentContainerStyle={styles.floorPlanScrollContent}
       >
         <View style={[styles.floorPlan, { width: PLAN_WIDTH, height: PLAN_HEIGHT }]}>
-          <View style={styles.floorPlanBackground}>
-            <Text style={styles.floorPlanLabel}>Restaurant Floor Plan</Text>
+          
+          {/* Restaurant Background Structure */}
+          
+          {/* Kitchen Area */}
+          <View style={[styles.roomArea, styles.kitchen, { 
+            top: 10, 
+            left: 10, 
+            width: PLAN_WIDTH * 0.25, 
+            height: 80 
+          }]}>
+            <Ionicons name="restaurant" size={20} color="#999" />
+            <Text style={styles.roomLabel}>Bucătărie</Text>
           </View>
 
+          {/* Entrance */}
+          <View style={[styles.roomArea, styles.entrance, { 
+            top: PLAN_HEIGHT - 70, 
+            left: PLAN_WIDTH / 2 - 50, 
+            width: 100, 
+            height: 60 
+          }]}>
+            <Ionicons name="enter" size={20} color="#666" />
+            <Text style={styles.roomLabel}>Intrare</Text>
+          </View>
+
+          {/* Restroom */}
+          <View style={[styles.roomArea, styles.restroom, { 
+            top: 10, 
+            right: 10, 
+            width: PLAN_WIDTH * 0.2, 
+            height: 70 
+          }]}>
+            <Ionicons name="man" size={18} color="#999" />
+            <Text style={styles.roomLabel}>Baie</Text>
+          </View>
+
+          {/* Bar/Counter (if space allows) */}
+          {PLAN_WIDTH > 300 && (
+            <View style={[styles.roomArea, styles.bar, { 
+              bottom: 100, 
+              left: 10, 
+              width: PLAN_WIDTH * 0.3, 
+              height: 50 
+            }]}>
+              <Ionicons name="wine" size={18} color="#8D6E63" />
+              <Text style={styles.roomLabel}>Bar</Text>
+            </View>
+          )}
+
+          {/* Dining Area Label */}
+          <View style={styles.diningAreaLabel}>
+            <Text style={styles.diningAreaText}>Zona de Servire</Text>
+          </View>
+
+          {/* Tables */}
           {tables.map((table) => {
             const selected = isTableSelected(table.tableNumber);
-            const xPos = (table.x / 100) * PLAN_WIDTH - 35;
-            const yPos = (table.y / 160) * PLAN_HEIGHT - 35;
+            const tableSize = getTableSize(table.capacity);
+            
+            // Position calculation
+            const xPos = (table.x / 100) * PLAN_WIDTH - tableSize.width / 2;
+            const yPos = (table.y / 160) * PLAN_HEIGHT - tableSize.height / 2;
 
             return (
               <TouchableOpacity
@@ -135,6 +195,9 @@ export default function FloorPlanSelector({
                   {
                     left: xPos,
                     top: yPos,
+                    width: tableSize.width,
+                    height: tableSize.height,
+                    borderRadius: tableSize.shape === 'round' ? tableSize.width / 2 : 12,
                   },
                   !table.available && styles.tableUnavailable,
                   selected && styles.tableSelected,
@@ -142,16 +205,45 @@ export default function FloorPlanSelector({
                 onPress={() => handleTablePress(table)}
                 disabled={!table.available}
               >
-                <View style={styles.tableContent}>
+                {/* Table Top View - Wood Texture Effect */}
+                <View style={[
+                  styles.tableTop,
+                  {
+                    borderRadius: tableSize.shape === 'round' ? tableSize.width / 2 : 8,
+                  }
+                ]}>
                   <Text
                     style={[
                       styles.tableNumber,
+                      { fontSize: tableSize.width > 70 ? 16 : 14 },
                       !table.available && styles.tableNumberUnavailable,
                       selected && styles.tableNumberSelected,
                     ]}
                   >
                     {table.tableNumber}
                   </Text>
+                  
+                  {/* Chairs indicators around table */}
+                  {Array.from({ length: Math.min(table.capacity, 4) }).map((_, idx) => (
+                    <View
+                      key={idx}
+                      style={[
+                        styles.chair,
+                        {
+                          position: 'absolute',
+                          width: 12,
+                          height: 12,
+                          borderRadius: 3,
+                          backgroundColor: selected ? '#FFD54F' : table.available ? '#8D6E63' : '#BDBDBD',
+                        },
+                        idx === 0 && { top: -6, left: '50%', marginLeft: -6 },
+                        idx === 1 && { bottom: -6, left: '50%', marginLeft: -6 },
+                        idx === 2 && { left: -6, top: '50%', marginTop: -6 },
+                        idx === 3 && { right: -6, top: '50%', marginTop: -6 },
+                      ]}
+                    />
+                  ))}
+
                   <View
                     style={[
                       styles.capacityBadge,
@@ -162,22 +254,22 @@ export default function FloorPlanSelector({
                     <Ionicons
                       name="people"
                       size={12}
-                      color={selected ? '#000' : table.available ? '#666' : '#999'}
+                      color={selected ? '#000' : table.available ? '#FFF' : '#999'}
                     />
                     <Text
                       style={[
                         styles.capacityText2,
-                        !table.available && styles.capacityTextUnavailable,
-                        selected && styles.capacityTextSelected,
+                        { color: selected ? '#000' : table.available ? '#FFF' : '#999' },
                       ]}
                     >
                       {table.capacity}
                     </Text>
                   </View>
                 </View>
+
                 {selected && (
                   <View style={styles.checkmark}>
-                    <Ionicons name="checkmark" size={16} color="#000" />
+                    <Ionicons name="checkmark" size={18} color="#000" />
                   </View>
                 )}
               </TouchableOpacity>
@@ -189,16 +281,16 @@ export default function FloorPlanSelector({
       {/* Legend */}
       <View style={styles.legend}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendBox, { backgroundColor: '#FFFFFF' }]} />
-          <Text style={styles.legendText}>Available</Text>
+          <View style={[styles.legendCircle, { backgroundColor: '#8D6E63' }]} />
+          <Text style={styles.legendText}>Disponibilă</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendBox, { backgroundColor: '#FFC107' }]} />
-          <Text style={styles.legendText}>Selected</Text>
+          <View style={[styles.legendCircle, { backgroundColor: '#FFC107' }]} />
+          <Text style={styles.legendText}>Selectată</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendBox, { backgroundColor: '#E0E0E0' }]} />
-          <Text style={styles.legendText}>Unavailable</Text>
+          <View style={[styles.legendCircle, { backgroundColor: '#E0E0E0' }]} />
+          <Text style={styles.legendText}>Ocupată</Text>
         </View>
       </View>
     </View>
@@ -272,60 +364,91 @@ const styles = StyleSheet.create({
   },
   floorPlan: {
     position: 'relative',
-    backgroundColor: '#F9F9F9',
+    backgroundColor: '#F5E6D3',
     borderRadius: 16,
     overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: '#E0E0E0',
+    borderWidth: 3,
+    borderColor: '#8D6E63',
   },
-  floorPlanBackground: {
+  roomArea: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: '#999',
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
   },
-  floorPlanLabel: {
-    fontSize: 18,
-    color: '#DDD',
+  kitchen: {
+    backgroundColor: 'rgba(255, 235, 235, 0.6)',
+  },
+  entrance: {
+    backgroundColor: 'rgba(200, 230, 201, 0.6)',
+  },
+  restroom: {
+    backgroundColor: 'rgba(225, 245, 254, 0.6)',
+  },
+  bar: {
+    backgroundColor: 'rgba(255, 243, 224, 0.6)',
+  },
+  roomLabel: {
+    fontSize: 11,
+    color: '#666',
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  diningAreaLabel: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -60 }, { translateY: -15 }],
+    opacity: 0.15,
+  },
+  diningAreaText: {
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#8D6E63',
   },
   table: {
     position: 'absolute',
-    width: 70,
-    height: 70,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#DDD',
-    elevation: 2,
+    elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
   },
   tableSelected: {
-    backgroundColor: '#FFC107',
-    borderColor: '#FFA000',
-    borderWidth: 3,
-    elevation: 4,
+    elevation: 6,
+    shadowOpacity: 0.4,
   },
   tableUnavailable: {
-    backgroundColor: '#E0E0E0',
-    borderColor: '#BDBDBD',
+    elevation: 1,
+    shadowOpacity: 0.1,
   },
-  tableContent: {
+  tableTop: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#8D6E63',
+    justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#6D4C41',
+  },
+  chair: {
+    borderWidth: 1,
+    borderColor: '#5D4037',
   },
   tableNumber: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#FFF',
     marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   tableNumberSelected: {
     color: '#000',
@@ -336,41 +459,36 @@ const styles = StyleSheet.create({
   capacityBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    marginTop: 4,
   },
   capacityBadgeSelected: {
     backgroundColor: '#FFFFFF',
   },
   capacityBadgeUnavailable: {
-    backgroundColor: '#F0F0F0',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
   capacityText2: {
     fontSize: 12,
-    color: '#666',
-    marginLeft: 2,
-    fontWeight: '600',
-  },
-  capacityTextSelected: {
-    color: '#000',
-  },
-  capacityTextUnavailable: {
-    color: '#999',
+    marginLeft: 3,
+    fontWeight: 'bold',
   },
   checkmark: {
     position: 'absolute',
-    top: -6,
-    right: -6,
-    backgroundColor: '#FFC107',
-    borderRadius: 12,
-    width: 24,
-    height: 24,
+    top: -8,
+    right: -8,
+    backgroundColor: '#4CAF50',
+    borderRadius: 15,
+    width: 30,
+    height: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: '#FFFFFF',
+    elevation: 4,
   },
   legend: {
     flexDirection: 'row',
@@ -385,16 +503,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  legendBox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
+  legendCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     marginRight: 8,
     borderWidth: 2,
-    borderColor: '#DDD',
+    borderColor: '#6D4C41',
   },
   legendText: {
     fontSize: 12,
     color: '#666',
+    fontWeight: '600',
   },
 });
