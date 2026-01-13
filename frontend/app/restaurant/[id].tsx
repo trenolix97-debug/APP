@@ -62,6 +62,17 @@ export default function RestaurantDetailScreen() {
 
   const renderMenuItem = ({ item }: { item: MenuItem }) => (
     <View style={styles.menuItem}>
+      {item.image ? (
+        <Image 
+          source={{ uri: item.image }} 
+          style={styles.menuItemImage}
+          resizeMode="cover"
+        />
+      ) : (
+        <View style={styles.menuItemImagePlaceholder}>
+          <Ionicons name="fast-food" size={24} color="#999" />
+        </View>
+      )}
       <View style={styles.menuItemContent}>
         <Text style={styles.menuItemName}>{item.name}</Text>
         <Text style={styles.menuItemDescription} numberOfLines={2}>
