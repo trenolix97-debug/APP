@@ -49,9 +49,17 @@ export default function HomeScreen() {
       style={styles.card}
       onPress={() => router.push(`/restaurant/${item.id}`)}
     >
-      <View style={styles.cardImagePlaceholder}>
-        <Ionicons name="restaurant" size={40} color="#999" />
-      </View>
+      {item.logo ? (
+        <Image 
+          source={{ uri: item.logo }} 
+          style={styles.cardImage}
+          resizeMode="cover"
+        />
+      ) : (
+        <View style={styles.cardImagePlaceholder}>
+          <Ionicons name="restaurant" size={40} color="#999" />
+        </View>
+      )}
       <View style={styles.cardContent}>
         <Text style={styles.cardTitle}>{item.name}</Text>
         <View style={styles.cardMeta}>
