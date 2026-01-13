@@ -273,6 +273,10 @@ const styles = StyleSheet.create({
     height: 200,
     backgroundColor: '#F5F5F5',
   },
+  heroImage: {
+    width: '100%',
+    height: 200,
+  },
   heroPlaceholder: {
     flex: 1,
     justifyContent: 'center',
