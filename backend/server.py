@@ -80,6 +80,10 @@ class Order(BaseModel):
     pickupTime: Optional[str] = None
     createdAt: datetime = Field(default_factory=datetime.utcnow)
 
+class Table(BaseModel):
+    tableNumber: str
+    capacity: int
+
 class ReservationCreate(BaseModel):
     restaurantId: str
     restaurantName: str
@@ -87,6 +91,8 @@ class ReservationCreate(BaseModel):
     time: str
     duration: int
     people: int
+    selectedTables: List[Table] = []
+    totalCapacity: int = 0
     preOrderedFood: List[CartItem] = []
     totalPrice: float = 0
 
@@ -98,6 +104,8 @@ class Reservation(BaseModel):
     time: str
     duration: int
     people: int
+    selectedTables: List[Table] = []
+    totalCapacity: int = 0
     preOrderedFood: List[CartItem] = []
     status: str = "upcoming"
     totalPrice: float = 0
