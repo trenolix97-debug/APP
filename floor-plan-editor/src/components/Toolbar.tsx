@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useEditorStore } from '../store/editorStore';
 import {
   ZoomInIcon,
@@ -8,16 +8,27 @@ import {
   ExportIcon,
   TrashIcon,
   MagnetIcon,
-  LoadIcon
+  LoadIcon,
+  UndoIcon,
+  RedoIcon,
+  FitIcon,
+  CenterIcon,
+  RulerIcon,
+  ImportIcon,
+  ImageIcon
 } from './Icons';
+import { Project } from '../types';
 
 interface ToolbarProps {
   onSave: () => void;
   onLoad: () => void;
   onExport: () => void;
+  onExportImage: () => void;
 }
 
-const Toolbar: React.FC<ToolbarProps> = ({ onSave, onLoad, onExport }) => {
+const Toolbar: React.FC<ToolbarProps> = ({ onSave, onLoad, onExport, onExportImage }) => {
+  const importRef = useRef<HTMLInputElement>(null);
+  
   const {
     zoom,
     setZoom,
@@ -27,19 +38,45 @@ const Toolbar: React.FC<ToolbarProps> = ({ onSave, onLoad, onExport }) => {
     toggleSnapToGrid,
     snapToCorners,
     toggleSnapToCorners,
+    showRulers,
+    toggleRulers,
     selectedElementId,
     deleteElement,
     clearCanvas,
     projectName,
     setProjectName,
     scale,
-    setScale
+    setScale,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    centerView,
+    zoomToFit,
+    loadProject
   } = useEditorStore();
 
   const handleDelete = () => {
     if (selectedElementId) {
       deleteElement(selectedElementId);
     }
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const project: Project = JSON.parse(event.target?.result as string);
+          loadProject(project);
+        } catch (err) {
+          alert('Eroare la importarea fișierului JSON');
+        }
+      };
+      reader.readAsText(file);
+    }
+    e.target.value = '';
   };
 
   return (
@@ -53,65 +90,116 @@ const Toolbar: React.FC<ToolbarProps> = ({ onSave, onLoad, onExport }) => {
           placeholder="Nume proiect"
         />
         
-        <button className="toolbar-btn" onClick={onSave} title="Salvează (localStorage)">
-          <SaveIcon /> Salvează
+        <div className="toolbar-divider" />
+        
+        <button 
+          className="toolbar-btn" 
+          onClick={undo} 
+          disabled={!canUndo()}
+          title="Undo (Ctrl+Z)"
+          style={{ opacity: canUndo() ? 1 : 0.4 }}
+        >
+          <UndoIcon />
         </button>
         
-        <button className="toolbar-btn" onClick={onLoad} title="Încarcă din localStorage">
-          <LoadIcon /> Încarcă
+        <button 
+          className="toolbar-btn" 
+          onClick={redo} 
+          disabled={!canRedo()}
+          title="Redo (Ctrl+Y)"
+          style={{ opacity: canRedo() ? 1 : 0.4 }}
+        >
+          <RedoIcon />
         </button>
+        
+        <div className="toolbar-divider" />
+        
+        <button className="toolbar-btn" onClick={onSave} title="Salvează local">
+          <SaveIcon />
+        </button>
+        
+        <button className="toolbar-btn" onClick={onLoad} title="Încarcă din local">
+          <LoadIcon />
+        </button>
+        
+        <button 
+          className="toolbar-btn" 
+          onClick={() => importRef.current?.click()} 
+          title="Import JSON"
+        >
+          <ImportIcon />
+        </button>
+        <input
+          ref={importRef}
+          type="file"
+          accept=".json"
+          style={{ display: 'none' }}
+          onChange={handleImport}
+        />
+        
+        <div className="toolbar-divider" />
         
         <button className="toolbar-btn primary" onClick={onExport} title="Export JSON">
-          <ExportIcon /> Export
+          <ExportIcon /> JSON
         </button>
-
-        <div style={{ marginLeft: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <label style={{ fontSize: '11px', color: '#666' }}>Scară:</label>
-          <select 
-            value={scale} 
-            onChange={(e) => setScale(Number(e.target.value))}
-            style={{ padding: '4px 8px', fontSize: '11px', border: '1px solid #e0e0e0', borderRadius: '4px' }}
-          >
-            <option value={25}>25px/m</option>
-            <option value={50}>50px/m</option>
-            <option value={100}>100px/m</option>
-          </select>
-        </div>
+        
+        <button className="toolbar-btn" onClick={onExportImage} title="Export Imagine PNG">
+          <ImageIcon /> PNG
+        </button>
       </div>
 
       <div className="toolbar-center">
+        <button className="toolbar-btn" onClick={zoomToFit} title="Zoom to Fit">
+          <FitIcon />
+        </button>
+        <button className="toolbar-btn" onClick={centerView} title="Centrează">
+          <CenterIcon />
+        </button>
+        
         <div className="zoom-controls">
-          <button
-            className="zoom-btn"
-            onClick={() => setZoom(zoom - 0.1)}
-            title="Zoom out"
-          >
+          <button className="zoom-btn" onClick={() => setZoom(zoom - 0.1)} title="Zoom out">
             <ZoomOutIcon />
           </button>
           <span className="zoom-value">{Math.round(zoom * 100)}%</span>
-          <button
-            className="zoom-btn"
-            onClick={() => setZoom(zoom + 0.1)}
-            title="Zoom in"
-          >
+          <button className="zoom-btn" onClick={() => setZoom(zoom + 0.1)} title="Zoom in">
             <ZoomInIcon />
           </button>
         </div>
+        
+        <select 
+          value={scale} 
+          onChange={(e) => setScale(Number(e.target.value))}
+          className="scale-select"
+          title="Scară"
+        >
+          <option value={25}>25px/m</option>
+          <option value={50}>50px/m</option>
+          <option value={75}>75px/m</option>
+          <option value={100}>100px/m</option>
+        </select>
       </div>
 
       <div className="toolbar-right">
         <button
+          className={`toolbar-btn ${showRulers ? 'active' : ''}`}
+          onClick={toggleRulers}
+          title="Rigle"
+        >
+          <RulerIcon />
+        </button>
+        
+        <button
           className={`toolbar-btn ${showGrid ? 'active' : ''}`}
           onClick={toggleGrid}
-          title="Afișează Grid"
+          title="Grid"
         >
-          <GridIcon /> Grid
+          <GridIcon />
         </button>
         
         <button
           className={`toolbar-btn ${snapToGrid ? 'active' : ''}`}
           onClick={toggleSnapToGrid}
-          title="Snap la grid"
+          title="Snap Grid"
         >
           Snap
         </button>
@@ -119,29 +207,31 @@ const Toolbar: React.FC<ToolbarProps> = ({ onSave, onLoad, onExport }) => {
         <button
           className={`toolbar-btn ${snapToCorners ? 'active' : ''}`}
           onClick={toggleSnapToCorners}
-          title="Magnet la colțuri"
+          title="Magnet Colțuri"
         >
-          <MagnetIcon /> Magnet
+          <MagnetIcon />
         </button>
+
+        <div className="toolbar-divider" />
 
         <button
           className="toolbar-btn"
           onClick={handleDelete}
           disabled={!selectedElementId}
-          style={{ opacity: selectedElementId ? 1 : 0.5 }}
+          style={{ opacity: selectedElementId ? 1 : 0.4 }}
           title="Șterge (Delete)"
         >
           <TrashIcon />
         </button>
 
         <button
-          className="toolbar-btn"
+          className="toolbar-btn danger-text"
           onClick={() => {
             if (confirm('Curăță tot canvas-ul pentru acest plan?')) {
               clearCanvas();
             }
           }}
-          title="Curăță canvas"
+          title="Curăță tot"
         >
           Reset
         </button>

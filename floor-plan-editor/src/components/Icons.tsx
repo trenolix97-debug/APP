@@ -52,12 +52,6 @@ export const ColumnIcon = () => (
   </svg>
 );
 
-export const TableIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <rect x="5" y="5" width="14" height="14" rx="1" />
-  </svg>
-);
-
 export const MeasureIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
     <line x1="4" y1="20" x2="20" y2="4" />
@@ -65,7 +59,6 @@ export const MeasureIcon = () => (
     <line x1="4" y1="20" x2="8" y2="20" />
     <line x1="20" y1="4" x2="20" y2="8" />
     <line x1="20" y1="4" x2="16" y2="4" />
-    <text x="12" y="14" fontSize="6" fill="currentColor">m</text>
   </svg>
 );
 
@@ -197,5 +190,105 @@ export const AngleFreeIcon = () => (
     <path d="M4 20 Q12 8, 20 12" />
     <circle cx="4" cy="20" r="2" fill="currentColor" />
     <circle cx="20" cy="12" r="2" fill="currentColor" />
+  </svg>
+);
+
+export const UndoIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <path d="M3 7v6h6" />
+    <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+  </svg>
+);
+
+export const RedoIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <path d="M21 7v6h-6" />
+    <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7" />
+  </svg>
+);
+
+export const FitIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+    <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+    <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+    <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+  </svg>
+);
+
+export const CenterIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <circle cx="12" cy="12" r="3" />
+    <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+  </svg>
+);
+
+export const RulerIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <rect x="2" y="6" width="20" height="12" rx="1" />
+    <line x1="6" y1="6" x2="6" y2="10" />
+    <line x1="10" y1="6" x2="10" y2="12" />
+    <line x1="14" y1="6" x2="14" y2="10" />
+    <line x1="18" y1="6" x2="18" y2="12" />
+  </svg>
+);
+
+export const ImportIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="17 8 12 3 7 8" />
+    <line x1="12" y1="3" x2="12" y2="15" />
+  </svg>
+);
+
+export const ImageIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <circle cx="8.5" cy="8.5" r="1.5" />
+    <polyline points="21 15 16 10 5 21" />
+  </svg>
+);
+
+export const StatsIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <line x1="18" y1="20" x2="18" y2="10" />
+    <line x1="12" y1="20" x2="12" y2="4" />
+    <line x1="6" y1="20" x2="6" y2="14" />
+  </svg>
+);
+
+export const KeyboardIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <rect x="2" y="4" width="20" height="16" rx="2" />
+    <line x1="6" y1="8" x2="6" y2="8" />
+    <line x1="10" y1="8" x2="10" y2="8" />
+    <line x1="14" y1="8" x2="14" y2="8" />
+    <line x1="18" y1="8" x2="18" y2="8" />
+    <line x1="6" y1="12" x2="18" y2="12" />
+    <line x1="8" y1="16" x2="16" y2="16" />
+  </svg>
+);
+
+export const AlignLeftIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <line x1="4" y1="4" x2="4" y2="20" />
+    <rect x="8" y="6" width="8" height="4" />
+    <rect x="8" y="14" width="12" height="4" />
+  </svg>
+);
+
+export const AlignCenterIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <line x1="12" y1="4" x2="12" y2="20" />
+    <rect x="6" y="6" width="12" height="4" />
+    <rect x="4" y="14" width="16" height="4" />
+  </svg>
+);
+
+export const AlignRightIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <line x1="20" y1="4" x2="20" y2="20" />
+    <rect x="8" y="6" width="8" height="4" />
+    <rect x="4" y="14" width="12" height="4" />
   </svg>
 );
