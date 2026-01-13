@@ -95,14 +95,16 @@ export default function HomeScreen() {
       </View>
 
       {/* Cuisine Filter */}
-      <FlatList
+      <ScrollView
         horizontal
         data={cuisines}
-        keyExtractor={(item) => item}
         showsHorizontalScrollIndicator={false}
         style={styles.filterList}
-        renderItem={({ item }) => (
+        contentContainerStyle={styles.filterListContent}
+      >
+        {cuisines.map((item) => (
           <TouchableOpacity
+            key={item}
             style={[
               styles.filterChip,
               selectedCuisine === item && styles.filterChipActive,
@@ -115,11 +117,11 @@ export default function HomeScreen() {
                 selectedCuisine === item && styles.filterTextActive,
               ]}
             >
-              {item === 'all' ? 'All' : item}
+              {item === 'all' ? 'Toate' : item}
             </Text>
           </TouchableOpacity>
-        )}
-      />
+        ))}
+      </ScrollView>
 
       {/* Restaurant List */}
       {loading ? (
