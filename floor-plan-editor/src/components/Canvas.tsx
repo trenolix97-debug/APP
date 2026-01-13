@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Stage, Layer, Rect, Circle, Ellipse, Line, Text, Group, Transformer } from 'react-konva';
 import Konva from 'konva';
 import { useEditorStore } from '../store/editorStore';
@@ -10,7 +10,7 @@ interface CanvasProps {
   onDropComplete: () => void;
 }
 
-const Canvas: React.FC<CanvasProps> = ({ draggedTemplate, onDropComplete }) => {
+const Canvas = forwardRef<any, CanvasProps>(({ draggedTemplate, onDropComplete }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
@@ -27,6 +27,7 @@ const Canvas: React.FC<CanvasProps> = ({ draggedTemplate, onDropComplete }) => {
     panOffset,
     setPanOffset,
     showGrid,
+    showRulers,
     snapToGrid,
     snapToCorners,
     gridSizeM,
@@ -39,28 +40,44 @@ const Canvas: React.FC<CanvasProps> = ({ draggedTemplate, onDropComplete }) => {
     addElement,
     updateElement,
     deleteElement,
+    duplicateElement,
     measureStart,
     measureEnd,
-    setMeasurePoints
+    setMeasurePoints,
+    pushHistory
   } = useEditorStore();
 
   const elements = getElements();
   const gridSizePx = gridSizeM * scale;
 
+  // Expose export function
+  useImperativeHandle(ref, () => ({
+    exportImage: () => {
+      if (stageRef.current) {
+        const uri = stageRef.current.toDataURL({ pixelRatio: 2 });
+        const link = document.createElement('a');
+        link.download = 'floorplan.png';
+        link.href = uri;
+        link.click();
+      }
+    }
+  }));
+
   // Handle resize
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
+        const rulerOffset = showRulers ? { x: 30, y: 24 } : { x: 0, y: 0 };
         setDimensions({
-          width: containerRef.current.offsetWidth,
-          height: containerRef.current.offsetHeight
+          width: containerRef.current.offsetWidth - rulerOffset.x,
+          height: containerRef.current.offsetHeight - rulerOffset.y - 36 // bottom bar
         });
       }
     };
     updateDimensions();
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
-  }, []);
+  }, [showRulers]);
 
   // Update transformer
   useEffect(() => {
@@ -84,6 +101,16 @@ const Canvas: React.FC<CanvasProps> = ({ draggedTemplate, onDropComplete }) => {
       if (e.key === 'Delete' && selectedElementId) {
         deleteElement(selectedElementId);
       }
+      if (e.key === 'r' && selectedElementId) {
+        const element = elements.find(el => el.id === selectedElementId);
+        if (element) {
+          updateElement(selectedElementId, { rotation: (element.rotation + 45) % 360 });
+          pushHistory();
+        }
+      }
+      if (e.key === 'd' && selectedElementId) {
+        duplicateElement(selectedElementId);
+      }
       if (e.key === 'Escape') {
         setSelectedElementId(null);
         setIsDrawing(false);
@@ -94,9 +121,9 @@ const Canvas: React.FC<CanvasProps> = ({ draggedTemplate, onDropComplete }) => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedElementId, deleteElement, setSelectedElementId, setMeasurePoints]);
+  }, [selectedElementId, elements, deleteElement, updateElement, setSelectedElementId, setMeasurePoints, duplicateElement, pushHistory]);
 
-  // Snap to grid helper
+  // Snap helpers
   const snapToGridFn = useCallback((value: number) => {
     if (snapToGrid) {
       return Math.round(value / gridSizePx) * gridSizePx;
@@ -104,61 +131,47 @@ const Canvas: React.FC<CanvasProps> = ({ draggedTemplate, onDropComplete }) => {
     return value;
   }, [snapToGrid, gridSizePx]);
 
-  // Find nearest corner for magnet snap
   const findNearestCorner = useCallback((x: number, y: number, threshold: number = 15): { x: number; y: number } | null => {
     if (!snapToCorners) return null;
-    
     let nearest: { x: number; y: number; dist: number } | null = null;
     
     elements.forEach(el => {
-      if (el.type === 'wall' || el.type === 'line') {
-        const corners = [
-          { x: el.x, y: el.y },
-          { x: el.x2 || el.x, y: el.y2 || el.y }
-        ];
-        corners.forEach(corner => {
-          const dist = Math.sqrt(Math.pow(corner.x - x, 2) + Math.pow(corner.y - y, 2));
-          if (dist < threshold && (!nearest || dist < nearest.dist)) {
-            nearest = { x: corner.x, y: corner.y, dist };
-          }
-        });
-      } else if (el.x !== undefined && el.y !== undefined) {
-        const dist = Math.sqrt(Math.pow(el.x - x, 2) + Math.pow(el.y - y, 2));
-        if (dist < threshold && (!nearest || dist < nearest.dist)) {
-          nearest = { x: el.x, y: el.y, dist };
+      const corners: { x: number; y: number }[] = [];
+      if (el.type === 'wall' || el.type === 'line' || el.type === 'door' || el.type === 'window') {
+        corners.push({ x: el.x, y: el.y });
+        if (el.x2 !== undefined && el.y2 !== undefined) {
+          corners.push({ x: el.x2, y: el.y2 });
         }
       }
+      corners.forEach(corner => {
+        const dist = Math.sqrt(Math.pow(corner.x - x, 2) + Math.pow(corner.y - y, 2));
+        if (dist < threshold && (!nearest || dist < nearest.dist)) {
+          nearest = { x: corner.x, y: corner.y, dist };
+        }
+      });
     });
     
     return nearest ? { x: nearest.x, y: nearest.y } : null;
   }, [snapToCorners, elements]);
 
-  // Apply angle constraint
   const applyAngleConstraint = useCallback((startX: number, startY: number, endX: number, endY: number): { x: number; y: number } => {
-    if (angleMode === 'free') {
-      return { x: endX, y: endY };
-    }
+    if (angleMode === 'free') return { x: endX, y: endY };
     
     const dx = endX - startX;
     const dy = endY - startY;
     const length = Math.sqrt(dx * dx + dy * dy);
     const angle = Math.atan2(dy, dx) * (180 / Math.PI);
     
-    let snappedAngle: number;
-    if (angleMode === '90') {
-      snappedAngle = Math.round(angle / 90) * 90;
-    } else { // 45
-      snappedAngle = Math.round(angle / 45) * 45;
-    }
-    
+    const snapAngle = angleMode === '90' ? 90 : 45;
+    const snappedAngle = Math.round(angle / snapAngle) * snapAngle;
     const radians = snappedAngle * (Math.PI / 180);
+    
     return {
       x: startX + length * Math.cos(radians),
       y: startY + length * Math.sin(radians)
     };
   }, [angleMode]);
 
-  // Get pointer position
   const getPointerPosition = useCallback(() => {
     const stage = stageRef.current;
     if (!stage) return { x: 0, y: 0 };
@@ -170,42 +183,34 @@ const Canvas: React.FC<CanvasProps> = ({ draggedTemplate, onDropComplete }) => {
     };
   }, [zoom, panOffset]);
 
-  // Convert pixels to meters
   const pxToM = (px: number) => px / scale;
   const mToPx = (m: number) => m * scale;
 
-  // Handle wheel for zoom
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();
     const scaleBy = 1.08;
     const newZoom = e.evt.deltaY < 0 ? zoom * scaleBy : zoom / scaleBy;
-    setZoom(Math.max(0.2, Math.min(4, newZoom)));
+    setZoom(Math.max(0.1, Math.min(5, newZoom)));
   };
 
-  // Handle stage click
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (e.target === e.target.getStage()) {
       setSelectedElementId(null);
     }
   };
 
-  // Handle mouse down
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
     let pos = getPointerPosition();
-    
-    // Try magnet snap
     const snapped = findNearestCorner(pos.x, pos.y);
     if (snapped) pos = snapped;
     else pos = { x: snapToGridFn(pos.x), y: snapToGridFn(pos.y) };
 
-    // Pan mode
     if (activeTool === 'pan' || e.evt.button === 1 || e.evt.button === 2) {
       setIsPanning(true);
       setLastPanPos({ x: e.evt.clientX, y: e.evt.clientY });
       return;
     }
 
-    // Measure tool
     if (activeTool === 'measure') {
       if (!measureStart) {
         setMeasurePoints(pos, null);
@@ -215,7 +220,6 @@ const Canvas: React.FC<CanvasProps> = ({ draggedTemplate, onDropComplete }) => {
       return;
     }
 
-    // Drawing tools
     if (['wall', 'door', 'window', 'line', 'column'].includes(activeTool)) {
       setIsDrawing(true);
       setDrawStart(pos);
@@ -236,7 +240,6 @@ const Canvas: React.FC<CanvasProps> = ({ draggedTemplate, onDropComplete }) => {
     }
   };
 
-  // Handle mouse move
   const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (isPanning && lastPanPos) {
       const dx = e.evt.clientX - lastPanPos.x;
@@ -248,21 +251,15 @@ const Canvas: React.FC<CanvasProps> = ({ draggedTemplate, onDropComplete }) => {
 
     if (isDrawing && drawStart) {
       let pos = getPointerPosition();
-      
-      // Apply angle constraint
       if (['wall', 'line'].includes(activeTool)) {
         pos = applyAngleConstraint(drawStart.x, drawStart.y, pos.x, pos.y);
       }
-      
-      // Try magnet snap
       const snapped = findNearestCorner(pos.x, pos.y);
       if (snapped) pos = snapped;
       else pos = { x: snapToGridFn(pos.x), y: snapToGridFn(pos.y) };
-      
       setDrawEnd(pos);
     }
 
-    // Update measure end point
     if (activeTool === 'measure' && measureStart && !measureEnd) {
       let pos = getPointerPosition();
       const snapped = findNearestCorner(pos.x, pos.y);
@@ -271,7 +268,6 @@ const Canvas: React.FC<CanvasProps> = ({ draggedTemplate, onDropComplete }) => {
     }
   };
 
-  // Handle mouse up
   const handleMouseUp = () => {
     if (isPanning) {
       setIsPanning(false);
@@ -285,50 +281,24 @@ const Canvas: React.FC<CanvasProps> = ({ draggedTemplate, onDropComplete }) => {
       const length = Math.sqrt(dx * dx + dy * dy);
 
       if (length > 10) {
+        const elementData = {
+          id: uuidv4(),
+          x: drawStart.x,
+          y: drawStart.y,
+          x2: drawEnd.x,
+          y2: drawEnd.y,
+          widthM: pxToM(length),
+          rotation: 0
+        };
+
         if (activeTool === 'wall') {
-          addElement({
-            id: uuidv4(),
-            type: 'wall',
-            x: drawStart.x,
-            y: drawStart.y,
-            x2: drawEnd.x,
-            y2: drawEnd.y,
-            widthM: pxToM(length),
-            rotation: 0
-          });
+          addElement({ ...elementData, type: 'wall' });
         } else if (activeTool === 'line') {
-          addElement({
-            id: uuidv4(),
-            type: 'line',
-            x: drawStart.x,
-            y: drawStart.y,
-            x2: drawEnd.x,
-            y2: drawEnd.y,
-            widthM: pxToM(length),
-            rotation: 0
-          });
+          addElement({ ...elementData, type: 'line' });
         } else if (activeTool === 'door') {
-          addElement({
-            id: uuidv4(),
-            type: 'door',
-            x: drawStart.x,
-            y: drawStart.y,
-            x2: drawEnd.x,
-            y2: drawEnd.y,
-            widthM: pxToM(length),
-            rotation: 0
-          });
+          addElement({ ...elementData, type: 'door' });
         } else if (activeTool === 'window') {
-          addElement({
-            id: uuidv4(),
-            type: 'window',
-            x: drawStart.x,
-            y: drawStart.y,
-            x2: drawEnd.x,
-            y2: drawEnd.y,
-            widthM: pxToM(length),
-            rotation: 0
-          });
+          addElement({ ...elementData, type: 'window' });
         }
       }
 
@@ -338,7 +308,6 @@ const Canvas: React.FC<CanvasProps> = ({ draggedTemplate, onDropComplete }) => {
     }
   };
 
-  // Handle drop
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     if (draggedTemplate && stageRef.current) {
@@ -352,8 +321,7 @@ const Canvas: React.FC<CanvasProps> = ({ draggedTemplate, onDropComplete }) => {
         addElement({
           id: uuidv4(),
           type: 'table',
-          x,
-          y,
+          x, y,
           widthM: draggedTemplate.widthM,
           heightM: draggedTemplate.heightM,
           rotation: 0,
@@ -368,54 +336,32 @@ const Canvas: React.FC<CanvasProps> = ({ draggedTemplate, onDropComplete }) => {
     }
   };
 
-  // Calculate distance for display
   const getDrawingLength = () => {
     if (!drawStart || !drawEnd) return null;
-    const dx = drawEnd.x - drawStart.x;
-    const dy = drawEnd.y - drawStart.y;
-    return Math.sqrt(dx * dx + dy * dy);
+    return Math.sqrt(Math.pow(drawEnd.x - drawStart.x, 2) + Math.pow(drawEnd.y - drawStart.y, 2));
   };
 
   const getMeasureDistance = () => {
     if (!measureStart || !measureEnd) return null;
-    const dx = measureEnd.x - measureStart.x;
-    const dy = measureEnd.y - measureStart.y;
-    return Math.sqrt(dx * dx + dy * dy);
+    return Math.sqrt(Math.pow(measureEnd.x - measureStart.x, 2) + Math.pow(measureEnd.y - measureStart.y, 2));
   };
 
-  // Render grid
   const renderGrid = () => {
     if (!showGrid) return null;
     const lines = [];
-    const gridColor = '#eee';
-    const majorGridColor = '#ddd';
     const canvasSize = 4000;
-    const majorEvery = 5; // Major line every 5 grid cells
 
     for (let i = -Math.floor(canvasSize / gridSizePx); i <= Math.floor(canvasSize / gridSizePx); i++) {
-      const isMajor = i % majorEvery === 0;
+      const isMajor = i % 5 === 0;
       const pos = i * gridSizePx;
       lines.push(
-        <Line
-          key={`h-${i}`}
-          points={[-canvasSize, pos, canvasSize, pos]}
-          stroke={isMajor ? majorGridColor : gridColor}
-          strokeWidth={(isMajor ? 0.5 : 0.25) / zoom}
-        />
-      );
-      lines.push(
-        <Line
-          key={`v-${i}`}
-          points={[pos, -canvasSize, pos, canvasSize]}
-          stroke={isMajor ? majorGridColor : gridColor}
-          strokeWidth={(isMajor ? 0.5 : 0.25) / zoom}
-        />
+        <Line key={`h-${i}`} points={[-canvasSize, pos, canvasSize, pos]} stroke={isMajor ? '#ddd' : '#eee'} strokeWidth={(isMajor ? 0.5 : 0.25) / zoom} />,
+        <Line key={`v-${i}`} points={[pos, -canvasSize, pos, canvasSize]} stroke={isMajor ? '#ddd' : '#eee'} strokeWidth={(isMajor ? 0.5 : 0.25) / zoom} />
       );
     }
     return lines;
   };
 
-  // Render element
   const renderElement = (element: FloorElement) => {
     const isSelected = element.id === selectedElementId;
     const strokeWidth = 1.5 / zoom;
@@ -426,172 +372,111 @@ const Canvas: React.FC<CanvasProps> = ({ draggedTemplate, onDropComplete }) => {
       onTap: () => setSelectedElementId(element.id),
     };
 
+    const handleLineDrag = (e: Konva.KonvaEventObject<DragEvent>) => {
+      const dx = e.target.x();
+      const dy = e.target.y();
+      updateElement(element.id, {
+        x: snapToGridFn(element.x + dx),
+        y: snapToGridFn(element.y + dy),
+        x2: element.x2 !== undefined ? snapToGridFn(element.x2 + dx) : undefined,
+        y2: element.y2 !== undefined ? snapToGridFn(element.y2 + dy) : undefined
+      });
+      e.target.position({ x: 0, y: 0 });
+      pushHistory();
+    };
+
     switch (element.type) {
-      case 'wall': {
-        const x1 = element.x;
-        const y1 = element.y;
-        const x2 = element.x2 ?? element.x;
-        const y2 = element.y2 ?? element.y;
+      case 'wall':
         return (
           <Group key={element.id}>
             <Line
               id={element.id}
-              points={[x1, y1, x2, y2]}
+              points={[element.x, element.y, element.x2 ?? element.x, element.y2 ?? element.y]}
               stroke={isSelected ? '#000' : '#1a1a1a'}
-              strokeWidth={8 / zoom} // Thick walls
+              strokeWidth={8 / zoom}
               lineCap="round"
+              hitStrokeWidth={20 / zoom}
               {...commonDragProps}
-              onDragEnd={(e) => {
-                const dx = e.target.x();
-                const dy = e.target.y();
-                updateElement(element.id, {
-                  x: snapToGridFn(x1 + dx),
-                  y: snapToGridFn(y1 + dy),
-                  x2: snapToGridFn(x2 + dx),
-                  y2: snapToGridFn(y2 + dy)
-                });
-                e.target.position({ x: 0, y: 0 });
-              }}
+              onDragEnd={handleLineDrag}
             />
-            {/* Dimension label */}
             {element.widthM && (
               <Text
-                x={(x1 + x2) / 2}
-                y={(y1 + y2) / 2 - 12 / zoom}
+                x={(element.x + (element.x2 ?? element.x)) / 2}
+                y={(element.y + (element.y2 ?? element.y)) / 2 - 14 / zoom}
                 text={`${element.widthM.toFixed(2)}m`}
                 fontSize={10 / zoom}
-                fill="#666"
-                align="center"
-                offsetX={15 / zoom}
+                fill="#555"
+                offsetX={18 / zoom}
               />
             )}
           </Group>
         );
-      }
 
-      case 'door': {
-        const x1 = element.x;
-        const y1 = element.y;
-        const x2 = element.x2 ?? element.x;
-        const y2 = element.y2 ?? element.y;
+      case 'door':
         return (
           <Group key={element.id}>
             <Line
               id={element.id}
-              points={[x1, y1, x2, y2]}
+              points={[element.x, element.y, element.x2 ?? element.x, element.y2 ?? element.y]}
               stroke={isSelected ? '#444' : '#666'}
               strokeWidth={4 / zoom}
               lineCap="round"
+              hitStrokeWidth={16 / zoom}
               {...commonDragProps}
-              onDragEnd={(e) => {
-                const dx = e.target.x();
-                const dy = e.target.y();
-                updateElement(element.id, {
-                  x: snapToGridFn(x1 + dx),
-                  y: snapToGridFn(y1 + dy),
-                  x2: snapToGridFn(x2 + dx),
-                  y2: snapToGridFn(y2 + dy)
-                });
-                e.target.position({ x: 0, y: 0 });
-              }}
-            />
-            {/* Door arc indicator */}
-            <Line
-              points={[x1, y1, x1 + (x2 - x1) * 0.3, y1 - 20 / zoom]}
-              stroke="#999"
-              strokeWidth={1 / zoom}
-              dash={[4 / zoom, 4 / zoom]}
+              onDragEnd={handleLineDrag}
             />
             {element.widthM && (
               <Text
-                x={(x1 + x2) / 2}
-                y={(y1 + y2) / 2 + 8 / zoom}
+                x={(element.x + (element.x2 ?? element.x)) / 2}
+                y={(element.y + (element.y2 ?? element.y)) / 2 + 10 / zoom}
                 text={`${element.widthM.toFixed(2)}m`}
                 fontSize={9 / zoom}
                 fill="#888"
-                align="center"
-                offsetX={12 / zoom}
+                offsetX={14 / zoom}
               />
             )}
           </Group>
         );
-      }
 
-      case 'window': {
-        const x1 = element.x;
-        const y1 = element.y;
-        const x2 = element.x2 ?? element.x;
-        const y2 = element.y2 ?? element.y;
+      case 'window':
         return (
           <Group key={element.id}>
             <Line
               id={element.id}
-              points={[x1, y1, x2, y2]}
+              points={[element.x, element.y, element.x2 ?? element.x, element.y2 ?? element.y]}
               stroke={isSelected ? '#666' : '#999'}
               strokeWidth={3 / zoom}
               lineCap="round"
+              hitStrokeWidth={14 / zoom}
               {...commonDragProps}
-              onDragEnd={(e) => {
-                const dx = e.target.x();
-                const dy = e.target.y();
-                updateElement(element.id, {
-                  x: snapToGridFn(x1 + dx),
-                  y: snapToGridFn(y1 + dy),
-                  x2: snapToGridFn(x2 + dx),
-                  y2: snapToGridFn(y2 + dy)
-                });
-                e.target.position({ x: 0, y: 0 });
-              }}
-            />
-            {/* Window lines */}
-            <Line
-              points={[(x1 + x2) / 2 - 5 / zoom, (y1 + y2) / 2 - 3 / zoom, (x1 + x2) / 2 + 5 / zoom, (y1 + y2) / 2 + 3 / zoom]}
-              stroke="#bbb"
-              strokeWidth={1 / zoom}
+              onDragEnd={handleLineDrag}
             />
             {element.widthM && (
               <Text
-                x={(x1 + x2) / 2}
-                y={(y1 + y2) / 2 + 8 / zoom}
+                x={(element.x + (element.x2 ?? element.x)) / 2}
+                y={(element.y + (element.y2 ?? element.y)) / 2 + 10 / zoom}
                 text={`${element.widthM.toFixed(2)}m`}
                 fontSize={9 / zoom}
                 fill="#aaa"
-                align="center"
-                offsetX={12 / zoom}
+                offsetX={14 / zoom}
               />
             )}
           </Group>
         );
-      }
 
-      case 'line': {
-        const x1 = element.x;
-        const y1 = element.y;
-        const x2 = element.x2 ?? element.x;
-        const y2 = element.y2 ?? element.y;
+      case 'line':
         return (
-          <Group key={element.id}>
-            <Line
-              id={element.id}
-              points={[x1, y1, x2, y2]}
-              stroke={isSelected ? '#000' : '#333'}
-              strokeWidth={1 / zoom}
-              {...commonDragProps}
-              onDragEnd={(e) => {
-                const dx = e.target.x();
-                const dy = e.target.y();
-                updateElement(element.id, {
-                  x: snapToGridFn(x1 + dx),
-                  y: snapToGridFn(y1 + dy),
-                  x2: snapToGridFn(x2 + dx),
-                  y2: snapToGridFn(y2 + dy)
-                });
-                e.target.position({ x: 0, y: 0 });
-              }}
-            />
-          </Group>
+          <Line
+            key={element.id}
+            id={element.id}
+            points={[element.x, element.y, element.x2 ?? element.x, element.y2 ?? element.y]}
+            stroke={isSelected ? '#000' : '#333'}
+            strokeWidth={1.5 / zoom}
+            hitStrokeWidth={12 / zoom}
+            {...commonDragProps}
+            onDragEnd={handleLineDrag}
+          />
         );
-      }
 
       case 'column':
         return (
@@ -602,14 +487,12 @@ const Canvas: React.FC<CanvasProps> = ({ draggedTemplate, onDropComplete }) => {
             y={element.y}
             radius={mToPx(element.widthM || 0.3) / 2}
             fill="#ddd"
-            stroke={isSelected ? '#000' : '#999'}
+            stroke={isSelected ? '#000' : '#888'}
             strokeWidth={strokeWidth}
             {...commonDragProps}
             onDragEnd={(e) => {
-              updateElement(element.id, {
-                x: snapToGridFn(e.target.x()),
-                y: snapToGridFn(e.target.y())
-              });
+              updateElement(element.id, { x: snapToGridFn(e.target.x()), y: snapToGridFn(e.target.y()) });
+              pushHistory();
             }}
           />
         );
@@ -629,67 +512,20 @@ const Canvas: React.FC<CanvasProps> = ({ draggedTemplate, onDropComplete }) => {
             rotation={element.rotation}
             {...commonDragProps}
             onDragEnd={(e) => {
-              updateElement(element.id, {
-                x: snapToGridFn(e.target.x()),
-                y: snapToGridFn(e.target.y())
-              });
+              updateElement(element.id, { x: snapToGridFn(e.target.x()), y: snapToGridFn(e.target.y()) });
+              pushHistory();
             }}
           >
             {isRound ? (
-              <Circle
-                radius={w / 2}
-                fill="#fff"
-                stroke={isSelected ? '#000' : '#333'}
-                strokeWidth={strokeWidth}
-              />
+              <Circle radius={w / 2} fill="#fff" stroke={isSelected ? '#000' : '#333'} strokeWidth={strokeWidth * 1.2} />
             ) : isOval ? (
-              <Ellipse
-                radiusX={w / 2}
-                radiusY={h / 2}
-                fill="#fff"
-                stroke={isSelected ? '#000' : '#333'}
-                strokeWidth={strokeWidth}
-              />
+              <Ellipse radiusX={w / 2} radiusY={h / 2} fill="#fff" stroke={isSelected ? '#000' : '#333'} strokeWidth={strokeWidth * 1.2} />
             ) : (
-              <Rect
-                width={w}
-                height={h}
-                offsetX={w / 2}
-                offsetY={h / 2}
-                fill="#fff"
-                stroke={isSelected ? '#000' : '#333'}
-                strokeWidth={strokeWidth}
-              />
+              <Rect width={w} height={h} offsetX={w / 2} offsetY={h / 2} fill="#fff" stroke={isSelected ? '#000' : '#333'} strokeWidth={strokeWidth * 1.2} cornerRadius={3 / zoom} />
             )}
-            {/* Table number */}
-            <Text
-              text={String(element.tableNumber || '')}
-              fontSize={14 / zoom}
-              fontStyle="bold"
-              fill="#333"
-              align="center"
-              verticalAlign="middle"
-              x={-10 / zoom}
-              y={-8 / zoom}
-            />
-            {/* Capacity */}
-            <Text
-              text={`${element.capacity}p`}
-              fontSize={9 / zoom}
-              fill="#888"
-              align="center"
-              x={-8 / zoom}
-              y={8 / zoom}
-            />
-            {/* Combine indicator */}
-            {element.canCombine && (
-              <Circle
-                x={w / 2 - 5 / zoom}
-                y={-h / 2 + 5 / zoom}
-                radius={3 / zoom}
-                fill="#22c55e"
-              />
-            )}
+            <Text text={String(element.tableNumber || '')} fontSize={14 / zoom} fontStyle="bold" fill="#333" align="center" x={-8 / zoom} y={-8 / zoom} />
+            <Text text={`${element.capacity}p`} fontSize={9 / zoom} fill="#888" x={-8 / zoom} y={7 / zoom} />
+            {element.canCombine && <Circle x={w / 2 - 4 / zoom} y={-h / 2 + 4 / zoom} radius={3 / zoom} fill="#22c55e" />}
           </Group>
         );
       }
@@ -699,49 +535,98 @@ const Canvas: React.FC<CanvasProps> = ({ draggedTemplate, onDropComplete }) => {
     }
   };
 
-  // Render drawing preview
   const renderDrawingPreview = () => {
     if (!isDrawing || !drawStart || !drawEnd) return null;
-    
-    const length = getDrawingLength();
-    
     return (
       <Group>
-        <Line
-          points={[drawStart.x, drawStart.y, drawEnd.x, drawEnd.y]}
-          stroke="#666"
-          strokeWidth={(activeTool === 'wall' ? 8 : 2) / zoom}
-          dash={[6 / zoom, 3 / zoom]}
-          lineCap="round"
-        />
-        {/* End points */}
+        <Line points={[drawStart.x, drawStart.y, drawEnd.x, drawEnd.y]} stroke="#666" strokeWidth={(activeTool === 'wall' ? 8 : 2) / zoom} dash={[6 / zoom, 3 / zoom]} lineCap="round" />
         <Circle x={drawStart.x} y={drawStart.y} radius={4 / zoom} fill="#333" />
         <Circle x={drawEnd.x} y={drawEnd.y} radius={4 / zoom} fill="#333" />
       </Group>
     );
   };
 
-  // Render measure line
   const renderMeasureLine = () => {
     if (!measureStart) return null;
     const end = measureEnd || measureStart;
-    
     return (
       <Group>
-        <Line
-          points={[measureStart.x, measureStart.y, end.x, end.y]}
-          stroke="#ff6b6b"
-          strokeWidth={1.5 / zoom}
-          dash={[8 / zoom, 4 / zoom]}
-        />
-        <Circle x={measureStart.x} y={measureStart.y} radius={5 / zoom} fill="#ff6b6b" />
-        {measureEnd && <Circle x={measureEnd.x} y={measureEnd.y} radius={5 / zoom} fill="#ff6b6b" />}
+        <Line points={[measureStart.x, measureStart.y, end.x, end.y]} stroke="#ef4444" strokeWidth={1.5 / zoom} dash={[8 / zoom, 4 / zoom]} />
+        <Circle x={measureStart.x} y={measureStart.y} radius={5 / zoom} fill="#ef4444" />
+        {measureEnd && <Circle x={measureEnd.x} y={measureEnd.y} radius={5 / zoom} fill="#ef4444" />}
       </Group>
     );
   };
 
   const drawingLength = getDrawingLength();
   const measureDistance = getMeasureDistance();
+  const rulerOffset = showRulers ? { x: 30, y: 24 } : { x: 0, y: 0 };
+
+  // Render rulers
+  const renderRulers = () => {
+    if (!showRulers) return null;
+    
+    const hMarks = [];
+    const vMarks = [];
+    const step = gridSizePx * zoom;
+    const majorStep = step * 5;
+    
+    // Horizontal ruler marks
+    for (let i = 0; i < dimensions.width / step + 20; i++) {
+      const x = (i * step + panOffset.x % step);
+      const isMajor = Math.round((i * gridSizePx - panOffset.x / zoom) / gridSizePx) % 5 === 0;
+      const meterValue = ((x - panOffset.x) / zoom / scale).toFixed(1);
+      
+      hMarks.push(
+        <div key={`h-${i}`} style={{
+          position: 'absolute',
+          left: x + rulerOffset.x,
+          top: 0,
+          height: isMajor ? '14px' : '8px',
+          width: '1px',
+          background: isMajor ? '#999' : '#ccc'
+        }}>
+          {isMajor && (
+            <span style={{ position: 'absolute', top: '14px', left: '-10px', fontSize: '8px', color: '#666', width: '20px', textAlign: 'center' }}>
+              {meterValue}
+            </span>
+          )}
+        </div>
+      );
+    }
+    
+    // Vertical ruler marks
+    for (let i = 0; i < dimensions.height / step + 20; i++) {
+      const y = (i * step + panOffset.y % step);
+      const isMajor = Math.round((i * gridSizePx - panOffset.y / zoom) / gridSizePx) % 5 === 0;
+      const meterValue = ((y - panOffset.y) / zoom / scale).toFixed(1);
+      
+      vMarks.push(
+        <div key={`v-${i}`} style={{
+          position: 'absolute',
+          top: y + rulerOffset.y,
+          left: 0,
+          width: isMajor ? '14px' : '8px',
+          height: '1px',
+          background: isMajor ? '#999' : '#ccc'
+        }}>
+          {isMajor && (
+            <span style={{ position: 'absolute', left: '14px', top: '-6px', fontSize: '8px', color: '#666', transform: 'rotate(-90deg)', transformOrigin: 'left top' }}>
+              {meterValue}
+            </span>
+          )}
+        </div>
+      );
+    }
+    
+    return (
+      <>
+        <div className="ruler-corner">m</div>
+        <div className="ruler ruler-horizontal">{hMarks}</div>
+        <div className="ruler ruler-vertical">{vMarks}</div>
+      </>
+    );
+  };
 
   return (
     <div
@@ -751,73 +636,51 @@ const Canvas: React.FC<CanvasProps> = ({ draggedTemplate, onDropComplete }) => {
       onDrop={handleDrop}
       style={{ cursor: activeTool === 'pan' || isPanning ? 'grab' : activeTool === 'measure' ? 'crosshair' : 'default' }}
     >
-      <Stage
-        ref={stageRef}
-        width={dimensions.width}
-        height={dimensions.height}
-        scaleX={zoom}
-        scaleY={zoom}
-        x={panOffset.x}
-        y={panOffset.y}
-        onClick={handleStageClick}
-        onWheel={handleWheel}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onContextMenu={(e) => e.evt.preventDefault()}
-      >
-        <Layer>
-          {/* Background */}
-          <Rect x={-2000} y={-2000} width={4000} height={4000} fill="white" />
-          
-          {/* Grid */}
-          {renderGrid()}
-          
-          {/* Elements */}
-          {elements.map(renderElement)}
-          
-          {/* Drawing preview */}
-          {renderDrawingPreview()}
-          
-          {/* Measure line */}
-          {renderMeasureLine()}
-          
-          {/* Transformer */}
-          <Transformer
-            ref={transformerRef}
-            rotateEnabled={true}
-            enabledAnchors={['middle-left', 'middle-right']}
-            boundBoxFunc={(oldBox, newBox) => {
-              if (newBox.width < 10 || newBox.height < 10) return oldBox;
-              return newBox;
-            }}
-          />
-        </Layer>
-      </Stage>
+      {renderRulers()}
       
-      {/* Live measurement display while drawing */}
-      {isDrawing && drawingLength && (
-        <div className="measure-display">
-          {pxToM(drawingLength).toFixed(2)} m
-        </div>
-      )}
+      <div style={{ position: 'absolute', top: rulerOffset.y, left: rulerOffset.x, right: 0, bottom: 36 }}>
+        <Stage
+          ref={stageRef}
+          width={dimensions.width}
+          height={dimensions.height}
+          scaleX={zoom}
+          scaleY={zoom}
+          x={panOffset.x}
+          y={panOffset.y}
+          onClick={handleStageClick}
+          onWheel={handleWheel}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onContextMenu={(e) => e.evt.preventDefault()}
+        >
+          <Layer>
+            <Rect x={-2000} y={-2000} width={4000} height={4000} fill="white" />
+            {renderGrid()}
+            {elements.map(renderElement)}
+            {renderDrawingPreview()}
+            {renderMeasureLine()}
+            <Transformer
+              ref={transformerRef}
+              rotateEnabled={true}
+              enabledAnchors={['middle-left', 'middle-right']}
+              boundBoxFunc={(oldBox, newBox) => (newBox.width < 10 || newBox.height < 10) ? oldBox : newBox}
+            />
+          </Layer>
+        </Stage>
+      </div>
       
-      {/* Measure tool display */}
-      {activeTool === 'measure' && measureDistance && (
-        <div className="measure-display">
-          📏 {pxToM(measureDistance).toFixed(2)} m
-        </div>
-      )}
+      {isDrawing && drawingLength && <div className="measure-display">{pxToM(drawingLength).toFixed(2)} m</div>}
+      {activeTool === 'measure' && measureDistance && <div className="measure-display">📏 {pxToM(measureDistance).toFixed(2)} m</div>}
       
-      {/* Status bar */}
       <div className="status-bar">
         <span>Zoom: {Math.round(zoom * 100)}%</span>
         <span>Elemente: {elements.length}</span>
-        <span>Scară: 1m = {scale}px</span>
-        {activeTool === 'measure' && <span style={{color: '#ff6b6b'}}>📏 Metru activ</span>}
+        <span>1m = {scale}px</span>
+        {activeTool === 'measure' && <span style={{color: '#ef4444'}}>📏 Metru</span>}
       </div>
     </div>
   );
-};
+});
 
 export default Canvas;
