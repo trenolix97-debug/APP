@@ -99,47 +99,21 @@ export default function HomeScreen() {
         <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search restaurants or dishes..."
+          placeholder="Caută restaurante sau mâncăruri..."
           value={search}
           onChangeText={setSearch}
           placeholderTextColor="#999"
         />
       </View>
 
-      {/* Cuisine Filter */}
-      <ScrollView
-        horizontal
-        data={cuisines}
-        showsHorizontalScrollIndicator={false}
-        style={styles.filterList}
-        contentContainerStyle={styles.filterListContent}
-      >
-        {cuisines.map((item) => (
-          <TouchableOpacity
-            key={item}
-            style={[
-              styles.filterChip,
-              selectedCuisine === item && styles.filterChipActive,
-            ]}
-            onPress={() => setSelectedCuisine(item)}
-          >
-            <Text
-              style={[
-                styles.filterText,
-                selectedCuisine === item && styles.filterTextActive,
-              ]}
-            >
-              {item === 'all' ? 'Toate' : item}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
       {/* Restaurant List */}
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#FFC107" />
-        </View>
+        <ScrollView contentContainerStyle={styles.listContent}>
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </ScrollView>
       ) : (
         <FlatList
           data={restaurants}
