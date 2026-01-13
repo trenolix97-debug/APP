@@ -119,7 +119,7 @@ class Reservation(BaseModel):
 DEMO_RESTAURANTS = [
     {
         "name": "Bella Italia",
-        "logo": "",
+        "logo": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400",
         "cuisine": "Italian",
         "rating": 4.7,
         "priceRange": "$$",
@@ -129,42 +129,43 @@ DEMO_RESTAURANTS = [
         "latitude": 40.7580,
         "longitude": -73.9855,
         "openingHours": "11:00 AM - 11:00 PM",
+        "heroImage": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800",
         "menu": [
             {
                 "category": "Appetizers",
                 "items": [
-                    {"name": "Bruschetta", "description": "Grilled bread with tomatoes and basil", "price": 8.99, "image": ""},
-                    {"name": "Caprese Salad", "description": "Fresh mozzarella, tomatoes, and basil", "price": 10.99, "image": ""}
+                    {"name": "Bruschetta", "description": "Grilled bread with tomatoes and basil", "price": 8.99, "image": "https://images.pexels.com/photos/4670574/pexels-photo-4670574.jpeg?w=400"},
+                    {"name": "Caprese Salad", "description": "Fresh mozzarella, tomatoes, and basil", "price": 10.99, "image": "https://images.pexels.com/photos/4670215/pexels-photo-4670215.jpeg?w=400"}
                 ]
             },
             {
                 "category": "Pasta",
                 "items": [
-                    {"name": "Spaghetti Carbonara", "description": "Creamy pasta with bacon and parmesan", "price": 16.99, "image": ""},
-                    {"name": "Fettuccine Alfredo", "description": "Rich cream sauce with parmesan", "price": 15.99, "image": ""},
-                    {"name": "Penne Arrabbiata", "description": "Spicy tomato sauce with garlic", "price": 14.99, "image": ""}
+                    {"name": "Spaghetti Carbonara", "description": "Creamy pasta with bacon and parmesan", "price": 16.99, "image": "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400"},
+                    {"name": "Fettuccine Alfredo", "description": "Rich cream sauce with parmesan", "price": 15.99, "image": "https://images.unsplash.com/photo-1611270629569-8b357cb88da9?w=400"},
+                    {"name": "Penne Arrabbiata", "description": "Spicy tomato sauce with garlic", "price": 14.99, "image": "https://images.unsplash.com/photo-1556761223-4c4282c73f77?w=400"}
                 ]
             },
             {
                 "category": "Pizza",
                 "items": [
-                    {"name": "Margherita Pizza", "description": "Classic tomato, mozzarella, and basil", "price": 13.99, "image": ""},
-                    {"name": "Pepperoni Pizza", "description": "Pepperoni and mozzarella", "price": 15.99, "image": ""},
-                    {"name": "Quattro Formaggi", "description": "Four cheese blend", "price": 17.99, "image": ""}
+                    {"name": "Margherita Pizza", "description": "Classic tomato, mozzarella, and basil", "price": 13.99, "image": "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400"},
+                    {"name": "Pepperoni Pizza", "description": "Pepperoni and mozzarella", "price": 15.99, "image": "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=400"},
+                    {"name": "Quattro Formaggi", "description": "Four cheese blend", "price": 17.99, "image": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400"}
                 ]
             },
             {
                 "category": "Desserts",
                 "items": [
-                    {"name": "Tiramisu", "description": "Coffee-flavored Italian dessert", "price": 7.99, "image": ""},
-                    {"name": "Panna Cotta", "description": "Creamy vanilla dessert", "price": 6.99, "image": ""}
+                    {"name": "Tiramisu", "description": "Coffee-flavored Italian dessert", "price": 7.99, "image": "https://images.unsplash.com/photo-1546549032-9571cd6b27df?w=400"},
+                    {"name": "Panna Cotta", "description": "Creamy vanilla dessert", "price": 6.99, "image": "https://images.unsplash.com/photo-1593504049359-74330189a345?w=400"}
                 ]
             }
         ]
     },
     {
         "name": "Sushi Master",
-        "logo": "",
+        "logo": "https://images.unsplash.com/photo-1538333581680-29dd4752ddf2?w=400",
         "cuisine": "Japanese",
         "rating": 4.8,
         "priceRange": "$$$",
@@ -174,44 +175,45 @@ DEMO_RESTAURANTS = [
         "latitude": 40.7614,
         "longitude": -73.9776,
         "openingHours": "12:00 PM - 10:30 PM",
+        "heroImage": "https://images.unsplash.com/photo-1538333581680-29dd4752ddf2?w=800",
         "menu": [
             {
                 "category": "Appetizers",
                 "items": [
-                    {"name": "Edamame", "description": "Steamed soybeans with sea salt", "price": 5.99, "image": ""},
-                    {"name": "Gyoza", "description": "Pan-fried dumplings", "price": 7.99, "image": ""},
-                    {"name": "Miso Soup", "description": "Traditional Japanese soup", "price": 3.99, "image": ""}
+                    {"name": "Edamame", "description": "Steamed soybeans with sea salt", "price": 5.99, "image": "https://images.pexels.com/photos/884600/pexels-photo-884600.jpeg?w=400"},
+                    {"name": "Gyoza", "description": "Pan-fried dumplings", "price": 7.99, "image": "https://images.pexels.com/photos/2664216/pexels-photo-2664216.jpeg?w=400"},
+                    {"name": "Miso Soup", "description": "Traditional Japanese soup", "price": 3.99, "image": "https://images.unsplash.com/photo-1526318896980-cf78c088247c?w=400"}
                 ]
             },
             {
                 "category": "Sushi Rolls",
                 "items": [
-                    {"name": "California Roll", "description": "Crab, avocado, cucumber", "price": 9.99, "image": ""},
-                    {"name": "Spicy Tuna Roll", "description": "Tuna with spicy mayo", "price": 11.99, "image": ""},
-                    {"name": "Dragon Roll", "description": "Eel, cucumber, avocado", "price": 14.99, "image": ""},
-                    {"name": "Rainbow Roll", "description": "Assorted fish on California roll", "price": 15.99, "image": ""}
+                    {"name": "California Roll", "description": "Crab, avocado, cucumber", "price": 9.99, "image": "https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=400"},
+                    {"name": "Spicy Tuna Roll", "description": "Tuna with spicy mayo", "price": 11.99, "image": "https://images.unsplash.com/photo-1615361200141-f45040f367be?w=400"},
+                    {"name": "Dragon Roll", "description": "Eel, cucumber, avocado", "price": 14.99, "image": "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=400"},
+                    {"name": "Rainbow Roll", "description": "Assorted fish on California roll", "price": 15.99, "image": "https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=400"}
                 ]
             },
             {
                 "category": "Sashimi",
                 "items": [
-                    {"name": "Salmon Sashimi", "description": "6 pieces of fresh salmon", "price": 13.99, "image": ""},
-                    {"name": "Tuna Sashimi", "description": "6 pieces of fresh tuna", "price": 14.99, "image": ""},
-                    {"name": "Mixed Sashimi", "description": "12 pieces assorted", "price": 24.99, "image": ""}
+                    {"name": "Salmon Sashimi", "description": "6 pieces of fresh salmon", "price": 13.99, "image": "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400"},
+                    {"name": "Tuna Sashimi", "description": "6 pieces of fresh tuna", "price": 14.99, "image": "https://images.unsplash.com/photo-1623341214825-9f4f963727da?w=400"},
+                    {"name": "Mixed Sashimi", "description": "12 pieces assorted", "price": 24.99, "image": "https://images.unsplash.com/photo-1638866281450-3933540af86a?w=400"}
                 ]
             },
             {
                 "category": "Main Dishes",
                 "items": [
-                    {"name": "Chicken Teriyaki", "description": "Grilled chicken with teriyaki sauce", "price": 16.99, "image": ""},
-                    {"name": "Beef Teriyaki", "description": "Grilled beef with teriyaki sauce", "price": 19.99, "image": ""}
+                    {"name": "Chicken Teriyaki", "description": "Grilled chicken with teriyaki sauce", "price": 16.99, "image": "https://images.unsplash.com/photo-1526318896980-cf78c088247c?w=400"},
+                    {"name": "Beef Teriyaki", "description": "Grilled beef with teriyaki sauce", "price": 19.99, "image": "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400"}
                 ]
             }
         ]
     },
     {
         "name": "Burger Junction",
-        "logo": "",
+        "logo": "https://images.unsplash.com/photo-1729394405518-eaf2a0203aa7?w=400",
         "cuisine": "American",
         "rating": 4.5,
         "priceRange": "$",
@@ -221,45 +223,46 @@ DEMO_RESTAURANTS = [
         "latitude": 40.7505,
         "longitude": -73.9934,
         "openingHours": "10:00 AM - 11:00 PM",
+        "heroImage": "https://images.unsplash.com/photo-1729394405518-eaf2a0203aa7?w=800",
         "menu": [
             {
                 "category": "Burgers",
                 "items": [
-                    {"name": "Classic Burger", "description": "Beef patty, lettuce, tomato, pickles", "price": 9.99, "image": ""},
-                    {"name": "Cheeseburger", "description": "Classic burger with cheese", "price": 10.99, "image": ""},
-                    {"name": "Bacon Burger", "description": "Burger with crispy bacon", "price": 11.99, "image": ""},
-                    {"name": "Double Deluxe", "description": "Two patties, cheese, bacon", "price": 14.99, "image": ""}
+                    {"name": "Classic Burger", "description": "Beef patty, lettuce, tomato, pickles", "price": 9.99, "image": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400"},
+                    {"name": "Cheeseburger", "description": "Classic burger with cheese", "price": 10.99, "image": "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=400"},
+                    {"name": "Bacon Burger", "description": "Burger with crispy bacon", "price": 11.99, "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=400"},
+                    {"name": "Double Deluxe", "description": "Two patties, cheese, bacon", "price": 14.99, "image": "https://images.unsplash.com/photo-1550547660-d9450f859349?w=400"}
                 ]
             },
             {
                 "category": "Sides",
                 "items": [
-                    {"name": "French Fries", "description": "Crispy golden fries", "price": 3.99, "image": ""},
-                    {"name": "Onion Rings", "description": "Beer-battered onion rings", "price": 4.99, "image": ""},
-                    {"name": "Sweet Potato Fries", "description": "Sweet and crispy", "price": 4.99, "image": ""},
-                    {"name": "Coleslaw", "description": "Fresh cabbage salad", "price": 2.99, "image": ""}
+                    {"name": "French Fries", "description": "Crispy golden fries", "price": 3.99, "image": "https://images.pexels.com/photos/1639562/pexels-photo-1639562.jpeg?w=400"},
+                    {"name": "Onion Rings", "description": "Beer-battered onion rings", "price": 4.99, "image": "https://images.pexels.com/photos/6671778/pexels-photo-6671778.jpeg?w=400"},
+                    {"name": "Sweet Potato Fries", "description": "Sweet and crispy", "price": 4.99, "image": "https://images.pexels.com/photos/1639562/pexels-photo-1639562.jpeg?w=400"},
+                    {"name": "Coleslaw", "description": "Fresh cabbage salad", "price": 2.99, "image": "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400"}
                 ]
             },
             {
                 "category": "Drinks",
                 "items": [
-                    {"name": "Soft Drink", "description": "Coke, Sprite, Fanta", "price": 2.49, "image": ""},
-                    {"name": "Milkshake", "description": "Chocolate, Vanilla, Strawberry", "price": 5.99, "image": ""},
-                    {"name": "Fresh Juice", "description": "Orange or Apple", "price": 3.99, "image": ""}
+                    {"name": "Soft Drink", "description": "Coke, Sprite, Fanta", "price": 2.49, "image": "https://images.unsplash.com/photo-1627308594190-a057cd4bfac8?w=400"},
+                    {"name": "Milkshake", "description": "Chocolate, Vanilla, Strawberry", "price": 5.99, "image": "https://images.unsplash.com/photo-1590301157284-ab2f8707bdc1?w=400"},
+                    {"name": "Fresh Juice", "description": "Orange or Apple", "price": 3.99, "image": "https://images.unsplash.com/photo-1590301157411-8686d4a34f10?w=400"}
                 ]
             },
             {
                 "category": "Desserts",
                 "items": [
-                    {"name": "Apple Pie", "description": "Warm apple pie with ice cream", "price": 5.99, "image": ""},
-                    {"name": "Brownie Sundae", "description": "Chocolate brownie with ice cream", "price": 6.99, "image": ""}
+                    {"name": "Apple Pie", "description": "Warm apple pie with ice cream", "price": 5.99, "image": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400"},
+                    {"name": "Brownie Sundae", "description": "Chocolate brownie with ice cream", "price": 6.99, "image": "https://images.pexels.com/photos/2173774/pexels-photo-2173774.jpeg?w=400"}
                 ]
             }
         ]
     },
     {
         "name": "Green Bowl",
-        "logo": "",
+        "logo": "https://images.unsplash.com/photo-1667388969250-1c7220bf3f37?w=400",
         "cuisine": "Healthy",
         "rating": 4.6,
         "priceRange": "$$",
@@ -269,36 +272,37 @@ DEMO_RESTAURANTS = [
         "latitude": 40.7489,
         "longitude": -73.9680,
         "openingHours": "8:00 AM - 9:00 PM",
+        "heroImage": "https://images.unsplash.com/photo-1667388969250-1c7220bf3f37?w=800",
         "menu": [
             {
                 "category": "Salads",
                 "items": [
-                    {"name": "Caesar Salad", "description": "Romaine, parmesan, croutons", "price": 10.99, "image": ""},
-                    {"name": "Greek Salad", "description": "Tomato, cucumber, feta, olives", "price": 11.99, "image": ""},
-                    {"name": "Quinoa Bowl", "description": "Quinoa, vegetables, tahini", "price": 12.99, "image": ""}
+                    {"name": "Caesar Salad", "description": "Romaine, parmesan, croutons", "price": 10.99, "image": "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400"},
+                    {"name": "Greek Salad", "description": "Tomato, cucumber, feta, olives", "price": 11.99, "image": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400"},
+                    {"name": "Quinoa Bowl", "description": "Quinoa, vegetables, tahini", "price": 12.99, "image": "https://images.unsplash.com/photo-1708184528305-33ce7daced65?w=400"}
                 ]
             },
             {
                 "category": "Bowls",
                 "items": [
-                    {"name": "Buddha Bowl", "description": "Mixed grains, roasted vegetables", "price": 13.99, "image": ""},
-                    {"name": "Poke Bowl", "description": "Fresh fish, rice, vegetables", "price": 15.99, "image": ""},
-                    {"name": "Grain Bowl", "description": "Brown rice, avocado, greens", "price": 12.99, "image": ""}
+                    {"name": "Buddha Bowl", "description": "Mixed grains, roasted vegetables", "price": 13.99, "image": "https://images.unsplash.com/photo-1510629954389-c1e0da47d414?w=400"},
+                    {"name": "Poke Bowl", "description": "Fresh fish, rice, vegetables", "price": 15.99, "image": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400"},
+                    {"name": "Grain Bowl", "description": "Brown rice, avocado, greens", "price": 12.99, "image": "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400"}
                 ]
             },
             {
                 "category": "Smoothies",
                 "items": [
-                    {"name": "Green Machine", "description": "Spinach, banana, mango", "price": 6.99, "image": ""},
-                    {"name": "Berry Blast", "description": "Mixed berries, yogurt", "price": 7.99, "image": ""},
-                    {"name": "Tropical Paradise", "description": "Pineapple, coconut, banana", "price": 7.99, "image": ""}
+                    {"name": "Green Machine", "description": "Spinach, banana, mango", "price": 6.99, "image": "https://images.unsplash.com/photo-1627308594190-a057cd4bfac8?w=400"},
+                    {"name": "Berry Blast", "description": "Mixed berries, yogurt", "price": 7.99, "image": "https://images.unsplash.com/photo-1590301157284-ab2f8707bdc1?w=400"},
+                    {"name": "Tropical Paradise", "description": "Pineapple, coconut, banana", "price": 7.99, "image": "https://images.unsplash.com/photo-1590301157411-8686d4a34f10?w=400"}
                 ]
             },
             {
                 "category": "Wraps",
                 "items": [
-                    {"name": "Chicken Wrap", "description": "Grilled chicken, vegetables", "price": 9.99, "image": ""},
-                    {"name": "Falafel Wrap", "description": "Falafel, hummus, vegetables", "price": 8.99, "image": ""}
+                    {"name": "Chicken Wrap", "description": "Grilled chicken, vegetables", "price": 9.99, "image": "https://images.unsplash.com/photo-1708184528305-33ce7daced65?w=400"},
+                    {"name": "Falafel Wrap", "description": "Falafel, hummus, vegetables", "price": 8.99, "image": "https://images.unsplash.com/photo-1510629954389-c1e0da47d414?w=400"}
                 ]
             }
         ]
