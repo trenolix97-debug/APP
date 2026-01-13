@@ -433,4 +433,68 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000',
   },
+  timeOptionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  timeOptionCardActive: {
+    borderColor: '#FFC107',
+    backgroundColor: '#FFF9E6',
+  },
+  timeOptionContent: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  timeOptionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#000',
+    marginBottom: 4,
+  },
+  timeOptionDescription: {
+    fontSize: 14,
+    color: '#666',
+  },
+  timePickerContainer: {
+    marginTop: 16,
+    backgroundColor: '#F9F9F9',
+    borderRadius: 12,
+    padding: 16,
+  },
+  timePickerLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 12,
+  },
+  timeSlotScroll: {
+    flexDirection: 'row',
+  },
+  timeSlot: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    marginRight: 8,
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
+  },
+  timeSlotActive: {
+    backgroundColor: '#FFC107',
+    borderColor: '#FFC107',
+  },
+  timeSlotText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600',
+  },
+  timeSlotTextActive: {
+    color: '#000',
+  },
 });
