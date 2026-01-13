@@ -414,20 +414,69 @@ async def get_reservation(reservation_id: str):
 @api_router.get("/restaurants/{restaurant_id}/floor-plan")
 async def get_floor_plan(restaurant_id: str):
     """Get restaurant floor plan with table layout"""
-    # Mock floor plan data - in real app this would be stored in database
+    # Different floor plans for different restaurants
     floor_plans = {
-        "default": [
-            {"tableNumber": "T1", "capacity": 2, "x": 20, "y": 20, "available": True},
-            {"tableNumber": "T2", "capacity": 2, "x": 20, "y": 60, "available": True},
-            {"tableNumber": "T3", "capacity": 4, "x": 60, "y": 20, "available": True},
-            {"tableNumber": "T4", "capacity": 4, "x": 60, "y": 60, "available": True},
-            {"tableNumber": "T5", "capacity": 6, "x": 20, "y": 100, "available": True},
-            {"tableNumber": "T6", "capacity": 6, "x": 60, "y": 100, "available": True},
-            {"tableNumber": "T7", "capacity": 8, "x": 20, "y": 140, "available": True},
-            {"tableNumber": "T8", "capacity": 2, "x": 60, "y": 140, "available": True},
-        ]
+        "bella_italia": [
+            {"tableNumber": "T1", "capacity": 2, "x": 15, "y": 15, "available": True},
+            {"tableNumber": "T2", "capacity": 2, "x": 15, "y": 50, "available": True},
+            {"tableNumber": "T3", "capacity": 4, "x": 55, "y": 15, "available": True},
+            {"tableNumber": "T4", "capacity": 4, "x": 55, "y": 50, "available": True},
+            {"tableNumber": "T5", "capacity": 6, "x": 15, "y": 85, "available": True},
+            {"tableNumber": "T6", "capacity": 6, "x": 55, "y": 85, "available": False},  # One unavailable
+            {"tableNumber": "T7", "capacity": 8, "x": 35, "y": 120, "available": True},
+        ],
+        "sushi_master": [
+            {"tableNumber": "S1", "capacity": 2, "x": 20, "y": 20, "available": True},
+            {"tableNumber": "S2", "capacity": 2, "x": 20, "y": 55, "available": True},
+            {"tableNumber": "S3", "capacity": 4, "x": 60, "y": 20, "available": True},
+            {"tableNumber": "S4", "capacity": 4, "x": 60, "y": 55, "available": True},
+            {"tableNumber": "S5", "capacity": 6, "x": 20, "y": 90, "available": True},
+            {"tableNumber": "S6", "capacity": 8, "x": 60, "y": 90, "available": True},
+            {"tableNumber": "Bar", "capacity": 10, "x": 40, "y": 125, "available": True},
+        ],
+        "burger_junction": [
+            {"tableNumber": "B1", "capacity": 2, "x": 25, "y": 25, "available": True},
+            {"tableNumber": "B2", "capacity": 2, "x": 65, "y": 25, "available": True},
+            {"tableNumber": "B3", "capacity": 4, "x": 25, "y": 60, "available": True},
+            {"tableNumber": "B4", "capacity": 4, "x": 65, "y": 60, "available": True},
+            {"tableNumber": "B5", "capacity": 6, "x": 25, "y": 95, "available": True},
+            {"tableNumber": "B6", "capacity": 6, "x": 65, "y": 95, "available": True},
+            {"tableNumber": "B7", "capacity": 8, "x": 45, "y": 130, "available": False},  # One unavailable
+        ],
+        "green_bowl": [
+            {"tableNumber": "G1", "capacity": 2, "x": 18, "y": 18, "available": True},
+            {"tableNumber": "G2", "capacity": 2, "x": 18, "y": 48, "available": True},
+            {"tableNumber": "G3", "capacity": 4, "x": 58, "y": 18, "available": True},
+            {"tableNumber": "G4", "capacity": 4, "x": 58, "y": 48, "available": True},
+            {"tableNumber": "G5", "capacity": 6, "x": 18, "y": 78, "available": True},
+            {"tableNumber": "G6", "capacity": 6, "x": 58, "y": 78, "available": True},
+            {"tableNumber": "Patio", "capacity": 8, "x": 38, "y": 108, "available": True},
+            {"tableNumber": "G8", "capacity": 2, "x": 38, "y": 138, "available": True},
+        ],
     }
-    return {"restaurantId": restaurant_id, "tables": floor_plans["default"]}
+    
+    # Get restaurant to determine which floor plan
+    try:
+        restaurant = await db.restaurants.find_one({"_id": ObjectId(restaurant_id)})
+        if not restaurant:
+            # Default floor plan
+            tables = floor_plans.get("bella_italia", [])
+        else:
+            restaurant_name = restaurant.get("name", "").lower().replace(" ", "_")
+            if "bella" in restaurant_name or "italia" in restaurant_name:
+                tables = floor_plans["bella_italia"]
+            elif "sushi" in restaurant_name:
+                tables = floor_plans["sushi_master"]
+            elif "burger" in restaurant_name:
+                tables = floor_plans["burger_junction"]
+            elif "green" in restaurant_name or "bowl" in restaurant_name:
+                tables = floor_plans["green_bowl"]
+            else:
+                tables = floor_plans["bella_italia"]
+    except:
+        tables = floor_plans["bella_italia"]
+    
+    return {"restaurantId": restaurant_id, "tables": tables}
 
 # Include the router in the main app
 app.include_router(api_router)
